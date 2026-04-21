@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const runtime = "edge";
+
 // Helper for fetch with timeout
 async function fetchWithTimeout(url: string, options: any = {}) {
   const { timeout = 8000 } = options;
@@ -34,8 +36,33 @@ export async function POST(req: Request) {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     };
 
-    // 1. KHUSUS TIKTOK (Sering bermasalah di Vercel, gunakan Tiklydown sebagai Prioritas Utama)
+    console.log(`[EDGE_PROTOCOL] Fetching: ${url}`);
+
+    // 1. KHUSUS TIKTOK
     if (isTiktok) {
+      // Prioritas 1: TikWM (Sangat stabil)
+      try {
+        const twmRes = await fetchWithTimeout(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`, { headers });
+        const twmData = await twmRes.json();
+        if (twmData && twmData.data) {
+          const d = twmData.data;
+          return NextResponse.json({
+            status: "stream",
+            url: d.play || d.wmplay,
+            title: d.title || "TikTok Video",
+            thumbnail: d.cover,
+            source: "TikTok",
+            author: { name: d.author?.nickname, username: d.author?.unique_id },
+            picker: [
+              { url: d.play, type: "video", quality: "HD (NO-WM)", extension: "mp4" },
+              { url: d.wmplay, type: "video", quality: "WATERMARK", extension: "mp4" },
+              { url: d.music, type: "audio", quality: "AUDIO", extension: "mp3" }
+            ]
+          });
+        }
+      } catch (e) { console.warn("TikWM failed, trying TiklyDown..."); }
+
+      // Prioritas 2: TiklyDown
       try {
         const tdRes = await fetchWithTimeout(`https://api.tiklydown.eu.org/api/download?url=${encodeURIComponent(url)}`, { headers });
         if (tdRes.ok) {
@@ -55,9 +82,7 @@ export async function POST(req: Request) {
             });
           }
         }
-      } catch (e) {
-        console.warn("Tiklydown failed, falling back to Ryzumi...");
-      }
+      } catch (e) { console.warn("Tiklydown failed, falling back to Ryzumi..."); }
     }
 
     // 2. JIKA YOUTUBE
@@ -99,7 +124,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // 3. ALL-IN-ONE RYZUMI (Fallback Utama untuk IG/FB/Twitter)
+    // 3. ALL-IN-ONE RYZUMI
     try {
       const ryzumiRes = await fetchWithTimeout(`https://api.ryzumi.net/api/downloader/all-in-one?url=${encodeURIComponent(url)}`, { headers });
       if (ryzumiRes.ok) {
@@ -122,15 +147,32 @@ export async function POST(req: Request) {
         }
       }
     } catch (err: any) {
-      console.error("All methods failed.");
+      console.error("Ryzumi All-in-One failed.");
+    }
+
+    // 4. COBALT FINAL FALLBACK
+    const COBALTS = ["https://cobalt.canine.tools/api/json", "https://cobalt-api.meowing.de/api/json"];
+    for (const instance of COBALTS) {
+      try {
+        const cRes = await fetchWithTimeout(instance, {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({ url, vQuality: "720" })
+        });
+        if (cRes.ok) {
+          const cData = await cRes.json();
+          if (cData && (cData.url || cData.picker)) return NextResponse.json(cData);
+        }
+      } catch (e) { continue; }
     }
 
     return NextResponse.json({ 
       status: "error", 
-      text: "Maaf, server pengunduh sedang sibuk atau URL tidak didukung. Silakan coba lagi nanti." 
+      text: "Sistem sibuk. Coba lagi dalam 30 detik." 
     }, { status: 200 });
 
   } catch (error: any) {
-    return NextResponse.json({ status: "error", text: "Sistem error internal." }, { status: 500 });
+    console.error("[EDGE_ERROR]", error);
+    return NextResponse.json({ status: "error", text: "Protokol Error." }, { status: 500 });
   }
 }
