@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
+// !!! GANTI DENGAN URL CLOUDFLARE WORKER ANDA !!!
+const CF_WORKER_PROXY = "https://codai-proxy.ferdiazprasida.workers.dev";
+
 // Extended timeout
 async function fetchWithTimeout(url, options = {}) {
   const { timeout = 30000 } = options;
@@ -20,10 +23,16 @@ async function fetchWithTimeout(url, options = {}) {
   }
 }
 
-// Proxy Wrapper (Using CodeTabs Free Proxy)
+// Proxy Wrapper (Using Personal Cloudflare Worker)
 async function fetchWithProxy(url, options = {}) {
-  const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
-  console.log(`[PROXY_PROTOCOL] Proxying request to: ${url}`);
+  if (!CF_WORKER_PROXY || CF_WORKER_PROXY.includes("URL_WORKER_ANDA")) {
+    console.warn("[PROXY_PROTOCOL] Cloudflare Worker URL belum diisi. Mencoba CodeTabs sebagai cadangan...");
+    const codetabsUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
+    return fetchWithTimeout(codetabsUrl, options);
+  }
+  
+  const proxyUrl = `${CF_WORKER_PROXY}/?url=${encodeURIComponent(url)}`;
+  console.log(`[PROXY_PROTOCOL] Proxying via Cloudflare Worker to: ${url}`);
   return fetchWithTimeout(proxyUrl, options);
 }
 
