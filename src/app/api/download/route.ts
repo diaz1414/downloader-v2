@@ -1,5 +1,22 @@
 import { NextResponse } from "next/server";
-import axios from "axios";
+
+// Helper for fetch with timeout
+async function fetchWithTimeout(url: string, options: any = {}) {
+  const { timeout = 8000 } = options;
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    throw error;
+  }
+}
 
 export async function POST(req: Request) {
   try {
@@ -11,39 +28,59 @@ export async function POST(req: Request) {
     }
 
     const isYoutube = url.includes("youtube.com") || url.includes("youtu.be");
+    const isTiktok = url.includes("tiktok.com");
 
-    console.log("-----------------------------------");
-    console.log(`Processing (${isYoutube ? "YouTube Specialized" : "Social"}):`, url);
-
-    // Headers to mimic a browser
     const headers = {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     };
 
-    // 1. JIKA YOUTUBE: Gunakan endpoint khusus Ryzumi
+    // 1. KHUSUS TIKTOK (Sering bermasalah di Vercel, gunakan Tiklydown sebagai Prioritas Utama)
+    if (isTiktok) {
+      try {
+        const tdRes = await fetchWithTimeout(`https://api.tiklydown.eu.org/api/download?url=${encodeURIComponent(url)}`, { headers });
+        if (tdRes.ok) {
+          const data = await tdRes.json();
+          if (data && data.video) {
+            return NextResponse.json({
+              status: "stream",
+              url: data.video.noWatermark || data.video.watermark,
+              title: data.title || "TikTok Video",
+              thumbnail: data.author?.avatar || "",
+              source: "TikTok",
+              picker: [
+                { url: data.video.noWatermark, type: "video", quality: "HD (NO-WM)", extension: "mp4" },
+                { url: data.video.watermark, type: "video", quality: "WATERMARK", extension: "mp4" },
+                ...(data.music ? [{ url: data.music.play_url, type: "audio", quality: "AUDIO", extension: "mp3" }] : [])
+              ]
+            });
+          }
+        }
+      } catch (e) {
+        console.warn("Tiklydown failed, falling back to Ryzumi...");
+      }
+    }
+
+    // 2. JIKA YOUTUBE
     if (isYoutube) {
       try {
-        console.log("Fetching YouTube media from Ryzumi...");
-        
-        // Parallel fetch for MP4 and MP3
         const [mp4Res, mp3Res] = await Promise.allSettled([
-          axios.get(`https://api.ryzumi.net/api/downloader/ytmp4`, { params: { url }, timeout: 8000, headers }),
-          axios.get(`https://api.ryzumi.net/api/downloader/ytmp3`, { params: { url }, timeout: 8000, headers })
+          fetchWithTimeout(`https://api.ryzumi.net/api/downloader/ytmp4?url=${encodeURIComponent(url)}`, { headers }),
+          fetchWithTimeout(`https://api.ryzumi.net/api/downloader/ytmp3?url=${encodeURIComponent(url)}`, { headers })
         ]);
 
         const pickerItems = [];
         let title = "YouTube Video";
         let thumbnail = "";
 
-        if (mp4Res.status === "fulfilled" && mp4Res.value.data?.videoUrl) {
-          const d = mp4Res.value.data;
+        if (mp4Res.status === "fulfilled" && mp4Res.value.ok) {
+          const d = await mp4Res.value.json();
           title = d.title || title;
           thumbnail = d.thumbnail || thumbnail;
           pickerItems.push({ url: d.videoUrl, type: "video", quality: "720P (DIRECT)", extension: "mp4" });
         }
 
-        if (mp3Res.status === "fulfilled" && mp3Res.value.data?.audioUrl) {
-          const d = mp3Res.value.data;
+        if (mp3Res.status === "fulfilled" && mp3Res.value.ok) {
+          const d = await mp3Res.value.json();
           pickerItems.push({ url: d.audioUrl, type: "audio", quality: "AUDIO (320kbps)", extension: "mp3" });
         }
 
@@ -58,43 +95,31 @@ export async function POST(req: Request) {
           });
         }
       } catch (err) {
-        console.warn("Ryzumi Specialized failed, trying Cobalt fallback...");
-      }
-
-      // Fallback ke Cobalt jika Ryzumi YTMP4 gagal
-      const YT_FALLBACKS = ["https://cobalt.canine.tools/api/json", "https://cobalt-api.meowing.de/api/json"];
-      for (const instance of YT_FALLBACKS) {
-        try {
-          const res = await axios.post(instance, { url, vQuality: "720" }, { timeout: 6000, headers: { ...headers, Accept: "application/json" } });
-          if (res.data && (res.data.url || res.data.picker)) return NextResponse.json(res.data);
-        } catch (e) { continue; }
+        console.warn("YouTube specialized failed.");
       }
     }
 
-    // 2. JIKA BUKAN YOUTUBE: Gunakan All-in-One Ryzumi (Sangat stabil untuk IG/TikTok)
+    // 3. ALL-IN-ONE RYZUMI (Fallback Utama untuk IG/FB/Twitter)
     try {
-      const ryzumiRes = await axios.get(`https://api.ryzumi.net/api/downloader/all-in-one`, {
-        params: { url: url },
-        timeout: 9000,
-        headers
-      });
-
-      const data = ryzumiRes.data;
-      if (data && data.medias && data.medias.length > 0) {
-        return NextResponse.json({
-          status: "stream",
-          url: data.medias[0].url,
-          title: data.title,
-          thumbnail: data.thumbnail,
-          source: data.source,
-          author: data.author,
-          picker: data.medias.map((m: any) => ({
-            url: m.url,
-            type: m.type || "video",
-            quality: m.quality || m.extension,
-            extension: m.extension
-          }))
-        });
+      const ryzumiRes = await fetchWithTimeout(`https://api.ryzumi.net/api/downloader/all-in-one?url=${encodeURIComponent(url)}`, { headers });
+      if (ryzumiRes.ok) {
+        const data = await ryzumiRes.json();
+        if (data && data.medias && data.medias.length > 0) {
+          return NextResponse.json({
+            status: "stream",
+            url: data.medias[0].url,
+            title: data.title,
+            thumbnail: data.thumbnail,
+            source: data.source,
+            author: data.author,
+            picker: data.medias.map((m: any) => ({
+              url: m.url,
+              type: m.type || "video",
+              quality: m.quality || m.extension,
+              extension: m.extension
+            }))
+          });
+        }
       }
     } catch (err: any) {
       console.error("All methods failed.");
