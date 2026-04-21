@@ -15,8 +15,8 @@ const mono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "HINDIA | Social Media Downloader",
-  description: "A minimalist document-style media extraction tool.",
+  title: "DIAW DOWNLOADER V2 | Professional Media Extraction",
+  description: "The ultimate tool for high-quality social media content extraction. Safe, fast, and private. Supporting TikTok, Instagram, YouTube, and more with zero tracking.",
 }
 
 export default function RootLayout({
