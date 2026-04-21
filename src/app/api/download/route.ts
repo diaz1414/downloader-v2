@@ -4,7 +4,7 @@ export const runtime = "edge";
 
 // Extended timeout (30 seconds for forced Ryzumi, less for others)
 async function fetchWithTimeout(url: string, options: any = {}) {
-  const { timeout = 30000 } = options; 
+  const { timeout = 30000 } = options;
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   try {
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
 
     const isYoutube = url.includes("youtube.com") || url.includes("youtu.be");
     const isTiktok = url.includes("tiktok.com");
-    
+
     const headers = {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     };
@@ -99,7 +99,7 @@ export async function POST(req: Request) {
 
     // 3. FORCED RYZUMI ALL-IN-ONE (For Instagram and everything else)
     try {
-      const ryzumiRes = await fetchWithTimeout(`https://api.ryzumi.net/api/downloader/all-in-one?url=${encodeURIComponent(url)}`, { 
+      const ryzumiRes = await fetchWithTimeout(`https://api.ryzumi.net/api/downloader/all-in-one?url=${encodeURIComponent(url)}`, {
         headers,
         timeout: 30000,
         cache: 'no-store'
@@ -128,9 +128,9 @@ export async function POST(req: Request) {
       console.error("[ALL_IN_ONE_ERROR]", err.message);
     }
 
-    return NextResponse.json({ 
-      status: "error", 
-      text: "Maaf, sistem sedang sibuk memproses antrean. Silakan coba lagi nanti." 
+    return NextResponse.json({
+      status: "error",
+      text: "Maaf, sistem sedang sibuk memproses antrean. Silakan coba lagi nanti."
     }, { status: 200 });
 
   } catch (error: any) {
