@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DIAW DOWNLOADER V2
 
-## Getting Started
+![Branding](public/images/logo.png)
 
-First, run the development server:
+> **Professional-grade digital media protocol designed for the seamless extraction and archiving of social media content.**
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+DIAW DOWNLOADER V2 is a high-end, minimalist media extraction tool built with a retro-contemporary "Analog" aesthetic. It prioritizes speed, privacy, and a premium user experience.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🎚️ Core Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Multi-Platform Protocol**: Supports high-quality extraction from TikTok, Instagram, YouTube, Twitter (X), and more.
+- **Global Localization**: Fully localized in **13 languages**, including international majors and Indonesian regional languages (Sunda & Jawa).
+- **Zero-Tracking Policy**: No logging, no tracking, and no data retention. Your extractions are private.
+- **Cinematic UI/UX**: Built with a "Hindia/Baskara Putra" inspired aesthetic, featuring parallax scroll effects, grain overlays, and editorial typography.
+- **Responsive Architecture**: Fully optimized for mobile, tablet, and desktop environments.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🛠️ Technical Stack
 
-## Learn More
+- **Framework**: [Next.js 15](https://nextjs.org/) (App Router)
+- **Animation**: [Framer Motion](https://www.framer.com/motion/)
+- **Localization**: [i18next](https://www.i18next.com/)
+- **Styling**: Tailwind CSS 4
+- **Icons**: Lucide React & Simple Icons
 
-To learn more about Next.js, take a look at the following resources:
+## 🚀 Getting Started
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Prerequisites
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Node.js 20+
+- npm / yarn / pnpm
 
-## Deploy on Vercel
+### Installation
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/diaz1414/downloader-v2.git
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## 📁 Project Structure
+
+- `/src/app`: Next.js pages and API routes.
+- `/src/components`: Reusable UI components (Navbar, Hero, SmartSearchBar, etc.).
+- `/src/locales`: Multi-language JSON translation files.
+- `/src/lib`: Utility functions and i18n configuration.
+- `/public`: Static assets (images, videos, and icons).
+
+## 👤 Developer
+
+Developed by **[_Ferdiazrip](https://diaww.my.id)**.
+
+Specializing in high-performance web architectures and seamless user experiences. Driven by the intersection of retro aesthetics and modern technology.
+
+---
+
+© 2026 **DIAW STUDIO**. All rights reserved.
