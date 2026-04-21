@@ -1,0 +1,40 @@
+{
+  "hero": {
+    "title": "DIAW // 高速媒体下载器",
+    "subtitle": "多合一社交媒体下载器。从 TikTok、Instagram、YouTube 等平台提取高质量视频和图像，零追踪。",
+    "input_placeholder": "在此粘贴您的链接（例如：Instagram Reel、TikTok 等）",
+    "button_fetch": "下载媒体",
+    "button_fetching": "下载中...",
+    "button_success": "成功！"
+  },
+  "features": {
+    "title": "支持的平台。",
+    "subtitle": "数字媒体的通用提取协议。"
+  },
+  "tutorial": {
+    "title": "操作指南。",
+    "step_label": "步骤",
+    "step1": {
+      "title": "复制链接",
+      "desc": "打开社交媒体应用并复制您要下载的媒体链接。"
+    },
+    "step2": {
+      "title": "在此粘贴",
+      "desc": "将链接粘贴到上方的输入框中。"
+    },
+    "step3": {
+      "title": "下载并保存",
+      "desc": "点击下载按钮，将媒体直接保存到您的设备中。"
+    }
+  },
+  "navbar": {
+    "home": "首页",
+    "archives": "关于",
+    "privacy": "隐私",
+    "subtext": "专业下载器"
+  },
+  "errors": {
+    "invalid_url": "链接无效。请重试。",
+    "fetch_failed": "提取媒体失败。请重试。"
+  }
+}

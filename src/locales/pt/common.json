@@ -1,0 +1,40 @@
+{
+  "hero": {
+    "title": "DIAW // Downloader de Alta Velocidade",
+    "subtitle": "Downloader de mídia social tudo-em-um. Extraia vídeos e imagens de alta qualidade do TikTok, Instagram, YouTube e muito mais, sem rastreamento.",
+    "input_placeholder": "Cole seu link aqui (ex: Instagram Reel, TikTok, etc.)",
+    "button_fetch": "Baixar Mídia",
+    "button_fetching": "Baixando...",
+    "button_success": "Sucesso!"
+  },
+  "features": {
+    "title": "Plataformas Suportadas.",
+    "subtitle": "Protocolo de extração universal para mídia digital."
+  },
+  "tutorial": {
+    "title": "Como Funciona.",
+    "step_label": "Passo",
+    "step1": {
+      "title": "Copiar Link",
+      "desc": "Abra o aplicativo de rede social e copie o link da mídia que deseja baixar."
+    },
+    "step2": {
+      "title": "Colar Aqui",
+      "desc": "Cole o link no campo de entrada acima."
+    },
+    "step3": {
+      "title": "Baixar e Salvar",
+      "desc": "Clique no botão de download e salve a mídia diretamente no seu dispositivo."
+    }
+  },
+  "navbar": {
+    "home": "Início",
+    "archives": "Sobre",
+    "privacy": "Privacidade",
+    "subtext": "Downloader Profissional"
+  },
+  "errors": {
+    "invalid_url": "Link inválido. Por favor, verifique novamente.",
+    "fetch_failed": "Falha ao buscar mídia. Tente novamente."
+  }
+}

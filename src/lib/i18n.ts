@@ -12,6 +12,11 @@ import ar from "@/locales/ar/common.json"
 import ja from "@/locales/ja/common.json"
 import su from "@/locales/su/common.json"
 import jv from "@/locales/jv/common.json"
+import ru from "@/locales/ru/common.json"
+import pt from "@/locales/pt/common.json"
+import zh from "@/locales/zh/common.json"
+import ko from "@/locales/ko/common.json"
+
 
 
 i18n.use(initReactI18next).init({
@@ -25,6 +30,10 @@ i18n.use(initReactI18next).init({
     ja: { translation: ja },
     su: { translation: su },
     jv: { translation: jv },
+    ru: { translation: ru },
+    pt: { translation: pt },
+    zh: { translation: zh },
+    ko: { translation: ko },
   },
   lng: "en",
   fallbackLng: "en",

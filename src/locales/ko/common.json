@@ -1,0 +1,40 @@
+{
+  "hero": {
+    "title": "DIAW // 초고속 미디어 다운로더",
+    "subtitle": "올인원 소셜 미디어 다운로더. TikTok, Instagram, YouTube 등에서 추적 없이 고화질 동영상과 이미지를 추출하세요.",
+    "input_placeholder": "여기에 링크를 붙여넣으세요 (예: Instagram 릴스, TikTok 등)",
+    "button_fetch": "미디어 다운로드",
+    "button_fetching": "다운로드 중...",
+    "button_success": "완료!"
+  },
+  "features": {
+    "title": "지원 플랫폼.",
+    "subtitle": "디지털 미디어를 위한 범용 추출 프로토콜."
+  },
+  "tutorial": {
+    "title": "사용 방법.",
+    "step_label": "단계",
+    "step1": {
+      "title": "링크 복사",
+      "desc": "소셜 미디어 앱을 열고 다운로드하려는 미디어 링크를 복사합니다."
+    },
+    "step2": {
+      "title": "여기에 붙여넣기",
+      "desc": "위의 입력란에 링크를 붙여넣습니다."
+    },
+    "step3": {
+      "title": "다운로드 및 저장",
+      "desc": "다운로드 버튼을 클릭하여 미디어를 기기에 직접 저장합니다."
+    }
+  },
+  "navbar": {
+    "home": "홈",
+    "archives": "정보",
+    "privacy": "개인정보",
+    "subtext": "전문 다운로더"
+  },
+  "errors": {
+    "invalid_url": "유효하지 않은 링크입니다. 다시 확인해 주세요.",
+    "fetch_failed": "미디어를 가져오지 못했습니다. 다시 시도해 주세요."
+  }
+}
