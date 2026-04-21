@@ -1,12 +1,24 @@
 import { NextResponse } from "next/server"
 import axios from "axios"
 
-// List of community instances for fallback - Updated with high health instances
+// MEGA LIST: Community instances gathered from trackers (April 2026)
+// We try many because they are free and some might be down or restricted.
 const COBALT_INSTANCES = [
-  "https://cobalt-backend.canine.tools/",
+  "https://cobalt.canine.tools/",
   "https://cobalt-api.meowing.de/",
   "https://capi.3kh0.net/",
-  "https://api.cobalt.tools/", // Official (Strict - as last resort)
+  "https://kityune.imput.net/",
+  "https://sunny.imput.net/",
+  "https://nachos.imput.net/",
+  "https://blossom.imput.net/",
+  "https://olly.imput.net/",
+  "https://noodle.imput.net/",
+  "https://cobalt.hyonsu.com/",
+  "https://cobalt.conner.gay/",
+  "https://cobalt.shun.codes/",
+  "https://cobalt.lewd.icu/",
+  "https://cobalt.instavids.net/",
+  "https://api.cobalt.tools/" // Last resort
 ]
 
 export async function POST(req: Request) {
@@ -19,56 +31,59 @@ export async function POST(req: Request) {
     }
 
     console.log("-----------------------------------")
-    console.log("Processing URL:", url)
+    console.log("Mega Fallback - Processing:", url)
 
     let lastError = ""
+    let success = false
+    let resultData = null
 
-    // Try each instance until one works
+    // Loop through the mega list
     for (const instance of COBALT_INSTANCES) {
       try {
-        console.log(`Trying: ${instance}`)
-        
-        // Using a cleaner payload (only essential fields)
+        console.log(`Checking: ${instance}`)
         const response = await axios.post(instance, {
           url: url,
           vQuality: "720",
-          // Removed vCodec as some older instances might throw 400
         }, {
           headers: {
             "Accept": "application/json",
             "Content-Type": "application/json",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
           },
-          timeout: 10000 // 10 second timeout
+          timeout: 7000 // Short timeout to quickly jump to next instance
         })
 
         if (response.data && (response.data.url || response.data.picker)) {
-          console.log(`✅ SUCCESS with instance: ${instance}`)
-          return NextResponse.json(response.data)
-        }
-
-        if (response.data.status === "error") {
-          lastError = response.data.text || response.data.message || "Unknown error"
-          console.warn(`⚠️ Instance ${instance} returned API error: ${lastError}`)
+          console.log(`✅ SUCCESS with: ${instance}`)
+          success = true
+          resultData = response.data
+          break // Stop the loop on success
         }
       } catch (err: any) {
         lastError = err?.response?.data?.text || err?.response?.data?.message || err.message
-        console.warn(`❌ Instance ${instance} failed: ${lastError}`)
-        // Continue to next if it's a 400 or timeout
+        console.warn(`[-] ${instance} failed. Trying next...`)
       }
     }
 
-    // If all instances failed
-    console.log("All instances exhausted.")
+    if (success) {
+      return NextResponse.json(resultData)
+    }
+
+    // Special message for YouTube failures
+    const isYoutube = url.includes("youtube") || url.includes("youtu.be")
+    const finalMsg = isYoutube 
+      ? "YouTube is extremely restricted on free servers right now. Please try TikTok or IG, or try again in 5 minutes."
+      : `All ${COBALT_INSTANCES.length} servers are busy. Error: ${lastError}`
+
     return NextResponse.json({ 
       status: "error", 
-      text: "Sorry, all download servers are currently busy or this link is restricted. Please try another link or platform." 
+      text: finalMsg 
     }, { status: 200 })
 
   } catch (error: any) {
-    console.error("Critical Internal Error:", error.message)
+    console.error("Critical Error:", error.message)
     return NextResponse.json(
-      { status: "error", text: "Internal server error" },
+      { status: "error", text: "System busy. Please refresh." },
       { status: 500 }
     )
   }
