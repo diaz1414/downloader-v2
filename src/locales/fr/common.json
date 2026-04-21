@@ -1,0 +1,38 @@
+{
+  "hero": {
+    "title": "Universal Social Media Downloader",
+    "subtitle": "High-performance media extraction from your favorite platforms.",
+    "input_placeholder": "Paste link here (TikTok, YouTube, IG, Twitter, FB)...",
+    "button_download": "Download",
+    "button_fetching": "Fetching...",
+    "button_success": "Success!"
+  },
+  "features": {
+    "title": "Supported Platforms",
+    "description": "We support all major social media platforms with high-quality output."
+  },
+  "tutorial": {
+    "title": "How to Use",
+    "step1": {
+      "title": "Copy Link",
+      "desc": "Find the video or photo you want to download and copy its URL."
+    },
+    "step2": {
+      "title": "Paste Link",
+      "desc": "Paste the link into the search bar above."
+    },
+    "step3": {
+      "title": "Download",
+      "desc": "Click the download button and choose your preferred format."
+    }
+  },
+  "footer": {
+    "rights": "All rights reserved.",
+    "terms": "Terms of Use",
+    "privacy": "Privacy Policy"
+  },
+  "errors": {
+    "invalid_url": "Invalid URL. Please check the link and try again.",
+    "fetch_failed": "Failed to fetch media. Please try again later."
+  }
+}
