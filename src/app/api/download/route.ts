@@ -31,17 +31,27 @@ export async function POST(req: Request) {
 
     const isYoutube = url.includes("youtube.com") || url.includes("youtu.be");
     const isTiktok = url.includes("tiktok.com");
+    const isInstagram = url.includes("instagram.com");
 
-    const headers = {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    // Spoofing Headers to bypass Data Center blocks
+    const randomIP = Array.from({ length: 4 }, () => Math.floor(Math.random() * 255)).join('.');
+    const baseHeaders = {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+      "Accept": "application/json",
+      "Accept-Language": "en-US,en;q=0.9",
+      "X-Forwarded-For": randomIP,
+      "X-Real-IP": randomIP,
     };
 
-    console.log(`[PROCESS] Target: ${url}`);
+    console.log(`[PROCESS] Target: ${url} (Spoof IP: ${randomIP})`);
 
     // 1. TIKTOK PRIORITY (TikWM)
     if (isTiktok) {
       try {
-        const twmRes = await fetchWithTimeout(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`, { headers, timeout: 10000 });
+        const twmRes = await fetchWithTimeout(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`, { 
+          headers: { ...baseHeaders, "Referer": "https://www.tikwm.com/" }, 
+          timeout: 10000 
+        });
         const twmData = await twmRes.json();
         if (twmData?.data) {
           const d = twmData.data;
@@ -50,7 +60,7 @@ export async function POST(req: Request) {
             url: d.play,
             title: d.title || "TikTok Video",
             thumbnail: d.cover,
-            source: "TikTok",
+            source: "TikTok Protocol",
             picker: [
               { url: d.play, type: "video", quality: "HD (NO-WM)", extension: "mp4" },
               { url: d.wmplay, type: "video", quality: "WATERMARK", extension: "mp4" },
@@ -61,12 +71,67 @@ export async function POST(req: Request) {
       } catch (e) { console.warn("TikTok Priority Failed"); }
     }
 
-    // 2. YOUTUBE PRIORITY (Specialized Ryzumi)
+    // 2. INSTAGRAM PRIORITY (Chocomilk & Ryzumi IG)
+    if (isInstagram) {
+      // Prioritas 1: Chocomilk
+      try {
+        const cocoRes = await fetchWithTimeout(`https://chocomilk.amira.us.kg/v1/download/instagram?url=${encodeURIComponent(url)}`, { 
+          headers: { ...baseHeaders, "Referer": "https://chocomilk.amira.us.kg/" }, 
+          timeout: 8000 
+        });
+        if (cocoRes.ok) {
+          const d = await cocoRes.json();
+          const data = d.data || d.result || d;
+          const mediaUrl = data.url || (Array.isArray(data) ? data[0]?.url : null);
+          if (mediaUrl) {
+            return NextResponse.json({
+              status: "stream",
+              url: mediaUrl,
+              title: data.title || "Instagram Content",
+              thumbnail: data.thumbnail || (Array.isArray(data) ? data[0]?.thumbnail : ""),
+              source: "Instagram Protocol (v1)",
+              picker: [{ url: mediaUrl, type: "video", quality: "HD", extension: "mp4" }]
+            });
+          }
+        }
+      } catch (e) { console.warn("Instagram Chocomilk Failed"); }
+
+      // Prioritas 2: Ryzumi Specialized IG
+      try {
+        const igRes = await fetchWithTimeout(`https://api.ryzumi.net/api/downloader/instagram?url=${encodeURIComponent(url)}`, { 
+          headers: { ...baseHeaders, "Referer": "https://ryzumi.net/" }, 
+          timeout: 10000 
+        });
+        if (igRes.ok) {
+          const data = await igRes.json();
+          if (data && data.medias && data.medias.length > 0) {
+            return NextResponse.json({
+              status: "stream",
+              url: data.medias[0].url,
+              title: data.title || "Instagram Content",
+              thumbnail: data.thumbnail,
+              source: "Instagram Protocol (v2)",
+              picker: data.medias.map((m: any) => ({
+                url: m.url, type: m.type, quality: m.quality || "HD", extension: m.extension || "mp4"
+              }))
+            });
+          }
+        }
+      } catch (e) { console.warn("Instagram Ryzumi Failed"); }
+    }
+
+    // 3. YOUTUBE PRIORITY (Specialized Ryzumi)
     if (isYoutube) {
       try {
         const [mp4Res, mp3Res] = await Promise.allSettled([
-          fetchWithTimeout(`https://api.ryzumi.net/api/downloader/ytmp4?url=${encodeURIComponent(url)}`, { headers, timeout: 15000 }),
-          fetchWithTimeout(`https://api.ryzumi.net/api/downloader/ytmp3?url=${encodeURIComponent(url)}`, { headers, timeout: 15000 })
+          fetchWithTimeout(`https://api.ryzumi.net/api/downloader/ytmp4?url=${encodeURIComponent(url)}`, { 
+            headers: { ...baseHeaders, "Referer": "https://ryzumi.net/" }, 
+            timeout: 15000 
+          }),
+          fetchWithTimeout(`https://api.ryzumi.net/api/downloader/ytmp3?url=${encodeURIComponent(url)}`, { 
+            headers: { ...baseHeaders, "Referer": "https://ryzumi.net/" }, 
+            timeout: 15000 
+          })
         ]);
 
         const pickerItems = [];
@@ -93,17 +158,17 @@ export async function POST(req: Request) {
             url: pickerItems[0].url,
             title,
             thumbnail,
-            source: "YouTube",
+            source: "YouTube Protocol",
             picker: pickerItems
           });
         }
       } catch (err) { console.warn("YouTube Priority Failed"); }
     }
 
-    // 3. UNIVERSAL FALLBACK (Ryzumi AIO)
+    // 4. UNIVERSAL FALLBACK (Ryzumi AIO)
     try {
       const ryzumiRes = await fetchWithTimeout(`https://api.ryzumi.net/api/downloader/all-in-one?url=${encodeURIComponent(url)}`, { 
-        headers,
+        headers: { ...baseHeaders, "Referer": "https://ryzumi.net/" },
         timeout: 20000,
         cache: 'no-store'
       });
@@ -116,7 +181,7 @@ export async function POST(req: Request) {
             url: data.medias[0].url,
             title: data.title || "Archive Result",
             thumbnail: data.thumbnail,
-            source: data.source || "Universal Protocol",
+            source: "Universal Protocol",
             picker: data.medias.map((m: any) => ({
               url: m.url,
               type: m.type || "video",
@@ -127,7 +192,7 @@ export async function POST(req: Request) {
         }
       }
     } catch (err: any) {
-      console.error("[RYZUMI_ERROR]", err.message);
+      console.error("[ALL_IN_ONE_ERROR]", err.message);
     }
 
     return NextResponse.json({ 
