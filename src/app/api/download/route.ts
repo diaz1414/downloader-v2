@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 
 export const runtime = "edge";
 
-// Fast timeout for Vercel (4-5 seconds max per attempt)
+// Extended timeout (30 seconds for forced Ryzumi, less for others)
 async function fetchWithTimeout(url: string, options: any = {}) {
-  const { timeout = 4500 } = options;
+  const { timeout = 30000 } = options; 
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   try {
@@ -29,15 +29,17 @@ export async function POST(req: Request) {
 
     const isYoutube = url.includes("youtube.com") || url.includes("youtu.be");
     const isTiktok = url.includes("tiktok.com");
-
+    
     const headers = {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     };
 
-    // 1. TIKTOK PRIORITY (TikWM is extremely fast)
+    console.log(`[HYBRID_PROTOCOL] Processing: ${url}`);
+
+    // 1. TIKTOK PRIORITY (TikWM)
     if (isTiktok) {
       try {
-        const twmRes = await fetchWithTimeout(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`, { headers });
+        const twmRes = await fetchWithTimeout(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`, { headers, timeout: 10000 });
         const twmData = await twmRes.json();
         if (twmData?.data) {
           const d = twmData.data;
@@ -53,63 +55,82 @@ export async function POST(req: Request) {
             ]
           });
         }
-      } catch (e) { /* fallback */ }
+      } catch (e) { console.warn("TikTok Priority Failed"); }
     }
 
-    // 2. GLOBAL FAST PRIORITY: COBALT (Fastest for YT/IG/TW)
-    const COBALT_INSTANCES = [
-      "https://cobalt.canine.tools/api/json",
-      "https://cobalt-api.meowing.de/api/json",
-      "https://api.cobalt.tools/api/json"
-    ];
-
-    for (const instance of COBALT_INSTANCES) {
+    // 2. YOUTUBE PRIORITY (Specialized Ryzumi)
+    if (isYoutube) {
       try {
-        const cRes = await fetchWithTimeout(instance, {
-          method: "POST",
-          headers: { ...headers, "Content-Type": "application/json", "Accept": "application/json" },
-          body: JSON.stringify({ url, vQuality: "720", isNoTTWatermark: true })
-        });
-        if (cRes.ok) {
-          const cData = await cRes.json();
-          if (cData.url || cData.picker) {
-            return NextResponse.json({
-              status: cData.picker ? "picker" : "stream",
-              url: cData.url,
-              title: "Archive Record",
-              source: "Global Protocol",
-              picker: cData.picker ? cData.picker.map((p: any) => ({
-                url: p.url, type: "video", quality: "Standard", extension: "mp4"
-              })) : [{ url: cData.url, type: "video", quality: "HD", extension: "mp4" }]
-            });
+        const [mp4Res, mp3Res] = await Promise.allSettled([
+          fetchWithTimeout(`https://api.ryzumi.net/api/downloader/ytmp4?url=${encodeURIComponent(url)}`, { headers, timeout: 15000 }),
+          fetchWithTimeout(`https://api.ryzumi.net/api/downloader/ytmp3?url=${encodeURIComponent(url)}`, { headers, timeout: 15000 })
+        ]);
+
+        const pickerItems = [];
+        let title = "YouTube Video";
+        let thumbnail = "";
+
+        if (mp4Res.status === "fulfilled" && mp4Res.value.ok) {
+          const d = await mp4Res.value.json();
+          if (d.videoUrl) {
+            title = d.title || title;
+            thumbnail = d.thumbnail || thumbnail;
+            pickerItems.push({ url: d.videoUrl, type: "video", quality: "720P (DIRECT)", extension: "mp4" });
           }
         }
-      } catch (e) { continue; }
+
+        if (mp3Res.status === "fulfilled" && mp3Res.value.ok) {
+          const d = await mp3Res.value.json();
+          if (d.audioUrl) pickerItems.push({ url: d.audioUrl, type: "audio", quality: "AUDIO (320kbps)", extension: "mp3" });
+        }
+
+        if (pickerItems.length > 0) {
+          return NextResponse.json({
+            status: "stream",
+            url: pickerItems[0].url,
+            title,
+            thumbnail,
+            source: "YouTube",
+            picker: pickerItems
+          });
+        }
+      } catch (err) { console.warn("YouTube Priority Failed"); }
     }
 
-    // 3. FINAL FALLBACK: RYZUMI (Only if Cobalt fails, use short timeout)
+    // 3. FORCED RYZUMI ALL-IN-ONE (For Instagram and everything else)
     try {
-      const ryzumiRes = await fetchWithTimeout(`https://api.ryzumi.net/api/downloader/all-in-one?url=${encodeURIComponent(url)}`, { headers, timeout: 4000 });
+      const ryzumiRes = await fetchWithTimeout(`https://api.ryzumi.net/api/downloader/all-in-one?url=${encodeURIComponent(url)}`, { 
+        headers,
+        timeout: 30000,
+        cache: 'no-store'
+      });
+
       if (ryzumiRes.ok) {
         const data = await ryzumiRes.json();
-        if (data?.medias?.length > 0) {
+        if (data && data.medias && data.medias.length > 0) {
           return NextResponse.json({
             status: "stream",
             url: data.medias[0].url,
-            title: data.title,
+            title: data.title || "Archive Result",
             thumbnail: data.thumbnail,
-            source: data.source,
+            source: data.source || "Universal Protocol",
+            author: data.author,
             picker: data.medias.map((m: any) => ({
-              url: m.url, type: m.type, quality: m.quality || m.extension, extension: m.extension
+              url: m.url,
+              type: m.type || "video",
+              quality: m.quality || m.extension || "HD",
+              extension: m.extension || "mp4"
             }))
           });
         }
       }
-    } catch (err: any) { /* final fail */ }
+    } catch (err: any) {
+      console.error("[ALL_IN_ONE_ERROR]", err.message);
+    }
 
-    return NextResponse.json({
-      status: "error",
-      text: "Maaf, protokol sedang sibuk. Silakan coba lagi nanti."
+    return NextResponse.json({ 
+      status: "error", 
+      text: "Maaf, sistem sedang sibuk memproses antrean. Silakan coba lagi nanti." 
     }, { status: 200 });
 
   } catch (error: any) {
