@@ -2,18 +2,20 @@ import { NextResponse } from "next/server";
 
 export const runtime = "edge";
 
-// Ganti dengan API Key dari dashboard ScrapingAnt kamu
+// API Key ScrapingAnt kamu
 const ANT_API_KEY = "b64b4ddbe94240de97808fdeedae26c2";
 
 // Helper untuk fetch dengan timeout + ScrapingAnt Integration
 async function fetchWithAnt(url: string, options: any = {}) {
-  const { timeout = 20000 } = options;
+  // Timeout diperketat ke 8 detik supaya fungsi Vercel (limit 10s) 
+  // nggak keburu mati duluan sebelum dapet respon.
+  const { timeout = 8000 } = options;
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
 
-  // Kita bungkus URL asli ke dalam API ScrapingAnt
-  // browser=false digunakan karena kita hanya menembak API (JSON), bukan render website
-  const proxyUrl = `https://api.scrapingant.com/v2/general?url=${encodeURIComponent(url)}&x-api-key=${ANT_API_KEY}&browser=false`;
+  // OPTIMASI: Tambah proxy_type=datacenter supaya ScrapingAnt dapet IP lebih cepet 
+  // dibanding IP Residential yang lemot banget.
+  const proxyUrl = `https://api.scrapingant.com/v2/general?url=${encodeURIComponent(url)}&x-api-key=${ANT_API_KEY}&browser=false&proxy_type=datacenter`;
 
   try {
     const response = await fetch(proxyUrl, {
@@ -91,9 +93,8 @@ export async function POST(req: Request) {
       } catch (e) { console.warn("TikTok Failed"); }
     }
 
-    // 2. INSTAGRAM PRIORITY (Using ScrapingAnt for Ryzumi)
+    // 2. INSTAGRAM PRIORITY
     if (isInstagram) {
-      // Prioritas 1: Chocomilk (Sering tembus tanpa proxy)
       try {
         const cocoRes = await fetchWithTimeout(`https://chocomilk.amira.us.kg/v1/download/instagram?url=${encodeURIComponent(url)}`, {
           headers: { ...baseHeaders, "Referer": "https://chocomilk.amira.us.kg/" }
@@ -115,7 +116,6 @@ export async function POST(req: Request) {
         }
       } catch (e) { console.warn("IG Chocomilk Failed"); }
 
-      // Prioritas 2: Ryzumi (Wajib pakai ScrapingAnt karena 403 di Vercel)
       try {
         const igRes = await fetchWithAnt(`https://api.ryzumi.net/api/downloader/instagram?url=${encodeURIComponent(url)}`);
         if (igRes.ok) {
@@ -136,7 +136,7 @@ export async function POST(req: Request) {
       } catch (e) { console.warn("IG Ryzumi Ant Failed"); }
     }
 
-    // 3. YOUTUBE PRIORITY (Using ScrapingAnt)
+    // 3. YOUTUBE PRIORITY
     if (isYoutube) {
       try {
         const [mp4Res, mp3Res] = await Promise.allSettled([
