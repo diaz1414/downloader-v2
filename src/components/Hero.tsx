@@ -1,33 +1,69 @@
 "use client"
 
+import { motion, Variants } from "framer-motion"
 import { useTranslation } from "react-i18next"
-import { motion } from "framer-motion"
-import { SmartSearchBar } from "@/components/SmartSearchBar"
+import { SmartSearchBar } from "./SmartSearchBar"
+
+const staggeredVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.05,
+      duration: 0.8,
+      ease: [0.215, 0.61, 0.355, 1] as const,
+    },
+  }),
+}
 
 export function Hero({ onResult }: { onResult: (data: any) => void }) {
   const { t } = useTranslation()
+  const title = "Digital Extraction Document."
 
   return (
-    <section className="relative pt-32 pb-20 px-4 flex flex-col items-center justify-center overflow-hidden">
-      {/* Background blobs */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 bg-blue-500/10 blur-[120px] rounded-full -z-10" />
-      <div className="absolute bottom-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[100px] rounded-full -z-10" />
+    <section className="relative pt-40 pb-20 px-6 overflow-hidden">
+      <div className="max-w-6xl mx-auto text-center space-y-12">
+        
+        {/* Editorial Title */}
+        <div className="space-y-4">
+          <h1 className="text-5xl md:text-8xl font-serif tracking-tight leading-[0.9]">
+            {title.split(" ").map((word, wordIdx) => (
+              <span key={wordIdx} className="inline-block whitespace-nowrap mr-4">
+                {word.split("").map((char, charIdx) => (
+                  <motion.span
+                    key={charIdx}
+                    custom={wordIdx * 5 + charIdx}
+                    initial="hidden"
+                    animate="visible"
+                    variants={staggeredVariants}
+                    className="inline-block"
+                  >
+                    {char}
+                  </motion.span>
+                ))}
+              </span>
+            ))}
+          </h1>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1, duration: 1 }}
+            className="text-sm md:text-base font-mono uppercase tracking-[0.3em] opacity-60"
+          >
+            Universal Media Protocol // v10.4
+          </motion.p>
+        </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="text-center max-w-3xl"
-      >
-        <h1 className="text-4xl md:text-7xl font-extrabold tracking-tight mb-6">
-          <span className="text-gradient">{t("hero.title")}</span>
-        </h1>
-        <p className="text-lg md:text-xl text-muted-foreground mb-10">
-          {t("hero.subtitle")}
-        </p>
-
-        <SmartSearchBar onResult={onResult} />
-      </motion.div>
+        {/* Search Field */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 1.2, duration: 0.8 }}
+        >
+          <SmartSearchBar onResult={onResult} />
+        </motion.div>
+      </div>
     </section>
   )
 }

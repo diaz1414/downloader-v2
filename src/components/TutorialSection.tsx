@@ -1,65 +1,59 @@
 "use client"
 
-import { useTranslation } from "react-i18next"
 import { motion } from "framer-motion"
-import { Copy, Link as LinkIcon, Download } from "lucide-react"
+import { useTranslation } from "react-i18next"
+
+const steps = [
+  { id: "01", key: "step1" },
+  { id: "02", key: "step2" },
+  { id: "03", key: "step3" },
+]
 
 export function TutorialSection() {
   const { t } = useTranslation()
 
-  const steps = [
-    {
-      id: 1,
-      title: t("tutorial.step1.title"),
-      desc: t("tutorial.step1.desc"),
-      icon: Copy,
-      color: "from-blue-500/20 to-blue-500/5",
-    },
-    {
-      id: 2,
-      title: t("tutorial.step2.title"),
-      desc: t("tutorial.step2.desc"),
-      icon: LinkIcon,
-      color: "from-emerald-500/20 to-emerald-500/5",
-    },
-    {
-      id: 3,
-      title: t("tutorial.step3.title"),
-      desc: t("tutorial.step3.desc"),
-      icon: Download,
-      color: "from-purple-500/20 to-purple-500/5",
-    },
-  ]
-
   return (
-    <section className="py-20 px-4 bg-slate-50 dark:bg-slate-900/20">
-      <div className="max-w-5xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-16">{t("tutorial.title")}</h2>
+    <section className="py-32 px-6 bg-background relative overflow-hidden">
+      {/* Decorative Text background */}
+      <div className="absolute top-20 right-0 text-[20vw] font-serif font-bold opacity-[0.02] select-none pointer-events-none">
+        GUIDE
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="space-y-24 relative">
+          {/* Vertical Timeline Line */}
+          <div className="absolute left-[2.2rem] md:left-[3.2rem] top-10 bottom-10 w-px bg-border opacity-20" />
+
           {steps.map((step, index) => (
             <motion.div
               key={step.id}
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
+              viewport={{ once: true, margin: "-100px" }}
               transition={{ delay: index * 0.2 }}
-              className="relative p-8 rounded-3xl glass-card overflow-hidden"
+              className="relative flex items-start gap-8 md:gap-16 group"
             >
-              <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${step.color} blur-2xl -z-10`} />
-              
-              <div className="w-12 h-12 bg-background rounded-2xl flex items-center justify-center shadow-lg mb-6">
-                <step.icon className="w-6 h-6 text-blue-500" />
+              {/* Step Number */}
+              <div className="relative z-10 shrink-0">
+                <div className="w-16 h-16 md:w-24 md:h-24 rounded-full border border-border bg-background flex items-center justify-center group-hover:bg-accent transition-all duration-700">
+                  <span className="text-3xl md:text-5xl font-serif group-hover:text-white transition-colors">
+                    {step.id}
+                  </span>
+                </div>
               </div>
 
-              <div className="text-4xl font-bold text-muted-foreground/10 absolute top-8 right-8">
-                0{step.id}
+              {/* Step Content */}
+              <div className="pt-4 md:pt-8 space-y-4">
+                <h3 className="text-xs font-mono uppercase tracking-[0.4em] opacity-40">
+                  Protocol Stage {step.id}
+                </h3>
+                <h4 className="text-2xl md:text-4xl font-serif max-w-md leading-tight">
+                  {t(`tutorial.${step.key}_title`)}
+                </h4>
+                <p className="text-sm md:text-base font-mono opacity-60 leading-relaxed max-w-lg">
+                  {t(`tutorial.${step.key}_description`)}
+                </p>
               </div>
-
-              <h3 className="text-xl font-bold mb-3">{step.title}</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                {step.desc}
-              </p>
             </motion.div>
           ))}
         </div>
