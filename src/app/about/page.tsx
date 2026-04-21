@@ -12,6 +12,46 @@ export default function AboutPage() {
 
       <main className="flex-1 pt-32 pb-20 px-6">
         <div className="max-w-4xl mx-auto space-y-24">
+          
+          {/* Institutional Brand Identity Section */}
+          <section className="relative py-20 px-10 border-y border-border/10 bg-accent/[0.02] overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-accent/5 via-transparent to-transparent opacity-50" />
+            
+            <div className="max-w-3xl mx-auto flex flex-col md:flex-row items-center gap-12 md:gap-20 relative z-10">
+              {/* Logo Container */}
+              <div className="shrink-0 relative group">
+                <div className="absolute -inset-4 border border-accent/20 scale-90 group-hover:scale-100 transition-transform duration-1000" />
+                <div className="w-48 h-48 md:w-64 md:h-64 bg-background border border-border p-4 relative overflow-hidden group">
+                  <img 
+                    src="/images/logo.png" 
+                    alt="DIAW LOGO" 
+                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
+                  />
+                </div>
+                <div className="absolute top-0 right-0 -mr-2 -mt-2 w-4 h-4 bg-accent" />
+              </div>
+
+              {/* Branding Text */}
+              <div className="flex-1 space-y-6 text-center md:text-left">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-mono uppercase tracking-[0.5em] text-accent">Official Protocol</p>
+                  <h2 className="text-5xl md:text-7xl font-serif tracking-tighter uppercase leading-none">DIAW</h2>
+                  <h3 className="text-xl md:text-2xl font-serif opacity-40 uppercase">Downloader V2</h3>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-8 pt-6 border-t border-border/20">
+                  <div className="space-y-1">
+                    <p className="text-[8px] font-mono uppercase opacity-30">Status</p>
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-accent">Active // Prod</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[8px] font-mono uppercase opacity-30">Build</p>
+                    <p className="text-[10px] font-mono uppercase tracking-widest">2026.04.21</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
 
           {/* Header Section */}
           <section className="space-y-8">
