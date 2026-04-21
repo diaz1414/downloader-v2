@@ -21,8 +21,8 @@ export function FeatureGrid() {
       <div className="max-w-6xl mx-auto space-y-16">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-border pb-8">
           <div className="space-y-4">
-            <h2 className="text-4xl md:text-6xl font-serif leading-none">Supported Platforms.</h2>
-            <p className="text-sm font-mono uppercase tracking-[0.3em] opacity-50">Universal High-Speed Extraction Ready</p>
+            <h2 className="text-4xl md:text-6xl font-serif leading-none">{t("features.title")}.</h2>
+            <p className="text-sm font-mono uppercase tracking-[0.3em] opacity-50">{t("features.subtitle")}</p>
           </div>
           <div className="text-[10px] font-mono uppercase tracking-widest opacity-30 text-right">
             Total Integrated Systems: 06 // Active

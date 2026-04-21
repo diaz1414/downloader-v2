@@ -1,38 +1,46 @@
 {
   "hero": {
-    "title": "Universal Social Media Downloader",
-    "subtitle": "High-performance media extraction from your favorite platforms.",
-    "input_placeholder": "Paste link here (TikTok, YouTube, IG, Twitter, FB)...",
-    "button_download": "Download",
-    "button_fetching": "Fetching...",
+    "title": "DIAW // High-Speed Media Downloader",
+    "subtitle": "All-in-One Social Media Downloader. Extract high-quality videos and images from TikTok, Instagram, YouTube, and more with zero tracking.",
+    "input_placeholder": "Paste your link here (e.g., Instagram Reel, TikTok, etc.)",
+    "button_fetch": "Download Media",
+    "button_fetching": "Downloading...",
     "button_success": "Success!"
   },
   "features": {
     "title": "Supported Platforms",
-    "description": "We support all major social media platforms with high-quality output."
+    "subtitle": "Universal High-Speed Extraction Ready"
   },
   "tutorial": {
     "title": "How to Use",
+    "step_label": "Tutorial Step",
     "step1": {
-      "title": "Copy Link",
-      "desc": "Find the video or photo you want to download and copy its URL."
+      "title": "Copy Link from Social Media.",
+      "desc": "Open the social media app and copy the URL of the video or image you wish to download."
     },
     "step2": {
-      "title": "Paste Link",
-      "desc": "Paste the link into the search bar above."
+      "title": "Paste URL into the input field.",
+      "desc": "Go back to DIAW DOWNLOADER and paste the link into the search bar at the top of the page."
     },
     "step3": {
-      "title": "Download",
-      "desc": "Click the download button and choose your preferred format."
+      "title": "Select quality and start downloading.",
+      "desc": "Choose your preferred quality and format, then click download to save the media to your device."
     }
   },
   "footer": {
-    "rights": "All rights reserved.",
-    "terms": "Terms of Use",
-    "privacy": "Privacy Policy"
+    "description": "The ultimate tool for high-quality social media content extraction. Safe, fast, and private. No tracking. No logs.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "support": "Support"
+  },
+  "navbar": {
+    "home": "Home",
+    "archives": "Archives",
+    "privacy": "Privacy",
+    "subtext": "Professional Downloader"
   },
   "errors": {
     "invalid_url": "Invalid URL. Please check the link and try again.",
-    "fetch_failed": "Failed to fetch media. Please try again later."
+    "fetch_failed": "Something went wrong with the server. Please try again."
   }
 }

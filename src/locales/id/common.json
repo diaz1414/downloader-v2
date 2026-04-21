@@ -1,38 +1,46 @@
 {
   "hero": {
-    "title": "Pengunduh Media Sosial Universal",
-    "subtitle": "Ekstraksi media berkinerja tinggi dari platform favorit Anda.",
-    "input_placeholder": "Tempel tautan di sini (TikTok, YouTube, IG, Twitter, FB)...",
-    "button_download": "Unduh",
-    "button_fetching": "Mengambil...",
+    "title": "DIAW // Pengunduh Media Berkecepatan Tinggi",
+    "subtitle": "Pengunduh Media Sosial Serba Ada. Ekstrak video dan gambar berkualitas tinggi dari TikTok, Instagram, YouTube, dan lainnya tanpa pelacakan.",
+    "input_placeholder": "Tempel tautan Anda di sini (misal: Instagram Reel, TikTok, dll.)",
+    "button_fetch": "Unduh Media",
+    "button_fetching": "Mengunduh...",
     "button_success": "Berhasil!"
   },
   "features": {
     "title": "Platform yang Didukung",
-    "description": "Kami mendukung semua platform media sosial utama dengan output berkualitas tinggi."
+    "subtitle": "Ekstraksi Universal Berkecepatan Tinggi Siap Digunakan"
   },
   "tutorial": {
     "title": "Cara Penggunaan",
+    "step_label": "Langkah Tutorial",
     "step1": {
-      "title": "Salin Tautan",
-      "desc": "Temukan video atau foto yang ingin Anda unduh dan salin URL-nya."
+      "title": "Salin Tautan dari Media Sosial.",
+      "desc": "Buka aplikasi media sosial dan salin URL video atau gambar yang ingin Anda unduh."
     },
     "step2": {
-      "title": "Tempel Tautan",
-      "desc": "Tempelkan tautan ke bilah pencarian di atas."
+      "title": "Tempel URL ke kolom input.",
+      "desc": "Kembali ke DIAW DOWNLOADER dan tempelkan tautan ke bilah pencarian di bagian atas halaman."
     },
     "step3": {
-      "title": "Unduh",
-      "desc": "Klik tombol unduh dan pilih format pilihan Anda."
+      "title": "Pilih kualitas dan mulai mengunduh.",
+      "desc": "Pilih kualitas dan format pilihan Anda, lalu klik unduh untuk menyimpan media ke perangkat Anda."
     }
   },
   "footer": {
-    "rights": "Hak cipta dilindungi undang-undang.",
-    "terms": "Syarat Penggunaan",
-    "privacy": "Kebijakan Privasi"
+    "description": "Alat utama untuk ekstraksi konten media sosial berkualitas tinggi. Aman, cepat, dan privat. Tanpa pelacakan. Tanpa log.",
+    "privacy": "Kebijakan Privasi",
+    "terms": "Syarat Layanan",
+    "support": "Dukungan"
+  },
+  "navbar": {
+    "home": "Beranda",
+    "archives": "Arsip",
+    "privacy": "Privasi",
+    "subtext": "Pengunduh Profesional"
   },
   "errors": {
     "invalid_url": "URL tidak valid. Silakan periksa tautan dan coba lagi.",
-    "fetch_failed": "Gagal mengambil media. Silakan coba lagi nanti."
+    "fetch_failed": "Terjadi kesalahan pada server. Silakan coba lagi."
   }
 }

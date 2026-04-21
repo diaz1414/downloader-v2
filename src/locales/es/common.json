@@ -1,38 +1,46 @@
 {
   "hero": {
-    "title": "Universal Social Media Downloader",
-    "subtitle": "High-performance media extraction from your favorite platforms.",
-    "input_placeholder": "Paste link here (TikTok, YouTube, IG, Twitter, FB)...",
-    "button_download": "Download",
-    "button_fetching": "Fetching...",
-    "button_success": "Success!"
+    "title": "DIAW // Descargador de Medios de Alta Velocidad",
+    "subtitle": "Descargador de redes sociales todo en uno. Extraiga videos e imágenes de alta calidad de TikTok, Instagram, YouTube y más sin seguimiento.",
+    "input_placeholder": "Pegue su enlace aquí (ej: Instagram Reel, TikTok, etc.)",
+    "button_fetch": "Obtener Medios",
+    "button_fetching": "Procesando...",
+    "button_success": "¡Éxito!"
   },
   "features": {
-    "title": "Supported Platforms",
-    "description": "We support all major social media platforms with high-quality output."
+    "title": "Plataformas Soportadas",
+    "subtitle": "Extracción Universal de Alta Velocidad Lista"
   },
   "tutorial": {
-    "title": "How to Use",
+    "title": "Cómo Usar",
+    "step_label": "Paso",
     "step1": {
-      "title": "Copy Link",
-      "desc": "Find the video or photo you want to download and copy its URL."
+      "title": "Copiar el enlace de la red social.",
+      "desc": "Abra la aplicación de la red social y copie la URL del video o imagen que desea descargar."
     },
     "step2": {
-      "title": "Paste Link",
-      "desc": "Paste the link into the search bar above."
+      "title": "Pegar la URL en el campo de entrada.",
+      "desc": "Vuelva a DIAW DOWNLOADER y pegue el enlace en la barra de búsqueda en la parte superior de la página."
     },
     "step3": {
-      "title": "Download",
-      "desc": "Click the download button and choose your preferred format."
+      "title": "Seleccionar calidad e iniciar descarga.",
+      "desc": "Elija su calidad y formato preferidos, luego haga clic en descargar para guardar el archivo en su dispositivo."
     }
   },
   "footer": {
-    "rights": "All rights reserved.",
-    "terms": "Terms of Use",
-    "privacy": "Privacy Policy"
+    "description": "La herramienta definitiva para la extracción de contenido de redes sociales de alta calidad. Segura, rápida y privada. Sin rastreo. Sin registros.",
+    "privacy": "Política de Privacidad",
+    "terms": "Términos de Servicio",
+    "support": "Soporte"
+  },
+  "navbar": {
+    "home": "Inicio",
+    "archives": "Archivos",
+    "privacy": "Privacidad",
+    "subtext": "Descargador Profesional"
   },
   "errors": {
-    "invalid_url": "Invalid URL. Please check the link and try again.",
-    "fetch_failed": "Failed to fetch media. Please try again later."
+    "invalid_url": "URL no válida. Verifique el enlace e inténtelo de nuevo.",
+    "fetch_failed": "Algo salió mal con el servidor. Inténtelo de nuevo."
   }
 }

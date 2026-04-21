@@ -9,21 +9,23 @@ const steps = [
   { id: "03", key: "step3" },
 ]
 export function TutorialSection() {
+  const { t } = useTranslation()
+
   const tutorialSteps = [
     {
       id: "01",
-      title: "Copy Link from Social Media.",
-      description: "Open the social media app and copy the URL of the video or image you wish to download.",
+      title: t("tutorial.step1.title"),
+      description: t("tutorial.step1.desc"),
     },
     {
       id: "02",
-      title: "Paste URL into the input field.",
-      description: "Go back to HINDIA and paste the link into the search bar at the top of the page.",
+      title: t("tutorial.step2.title"),
+      description: t("tutorial.step2.desc"),
     },
     {
       id: "03",
-      title: "Select quality and start downloading.",
-      description: "Choose your preferred quality and format, then click download to save the media to your device.",
+      title: t("tutorial.step3.title"),
+      description: t("tutorial.step3.desc"),
     },
   ]
 
@@ -60,7 +62,7 @@ export function TutorialSection() {
               {/* Step Content */}
               <div className="pt-4 md:pt-8 space-y-4">
                 <h3 className="text-xs font-mono uppercase tracking-[0.4em] opacity-40">
-                  Tutorial Step {step.id}
+                  {t("tutorial.step_label")} {step.id}
                 </h3>
                 <h4 className="text-2xl md:text-4xl font-serif max-w-md leading-tight">
                   {step.title}

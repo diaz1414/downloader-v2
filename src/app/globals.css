@@ -59,8 +59,14 @@
   .doc-container {
     border: 1px solid var(--border);
     background: transparent;
-    padding: 2rem;
+    padding: 1rem;
     position: relative;
+  }
+
+  @media (min-width: 768px) {
+    .doc-container {
+      padding: 2rem;
+    }
   }
 
   .doc-container::before {

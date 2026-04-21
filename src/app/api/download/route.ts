@@ -15,33 +15,45 @@ export async function POST(req: Request) {
     console.log("-----------------------------------");
     console.log(`Processing (${isYoutube ? "YouTube Specialized" : "Social"}):`, url);
 
-    // 1. JIKA YOUTUBE: Gunakan endpoint khusus Ryzumi YTMP4
+    // 1. JIKA YOUTUBE: Gunakan endpoint khusus Ryzumi
     if (isYoutube) {
       try {
-        console.log("Trying Ryzumi YTMP4 specialized endpoint...");
-        // Format: GET https://api.ryzumi.net/api/downloader/ytmp4?url=...
-        const ytRes = await axios.get(`https://api.ryzumi.net/api/downloader/ytmp4`, {
-          params: { url: url },
-          timeout: 15000
-        });
+        console.log("Fetching YouTube media from Ryzumi...");
+        
+        // Parallel fetch for MP4 and MP3
+        const [mp4Res, mp3Res] = await Promise.allSettled([
+          axios.get(`https://api.ryzumi.net/api/downloader/ytmp4`, { params: { url }, timeout: 10000 }),
+          axios.get(`https://api.ryzumi.net/api/downloader/ytmp3`, { params: { url }, timeout: 10000 })
+        ]);
 
-        const data = ytRes.data;
-        // Ryzumi YTMP4 biasanya mengembalikan { title, videoUrl, thumbnail, duration }
-        if (data && data.videoUrl) {
-          console.log("✅ YT SUCCESS with Ryzumi YTMP4");
+        const pickerItems = [];
+        let title = "YouTube Video";
+        let thumbnail = "";
+
+        if (mp4Res.status === "fulfilled" && mp4Res.value.data?.videoUrl) {
+          const d = mp4Res.value.data;
+          title = d.title || title;
+          thumbnail = d.thumbnail || thumbnail;
+          pickerItems.push({ url: d.videoUrl, type: "video", quality: "720P (DIRECT)", extension: "mp4" });
+        }
+
+        if (mp3Res.status === "fulfilled" && mp3Res.value.data?.audioUrl) {
+          const d = mp3Res.value.data;
+          pickerItems.push({ url: d.audioUrl, type: "audio", quality: "AUDIO (320kbps)", extension: "mp3" });
+        }
+
+        if (pickerItems.length > 0) {
           return NextResponse.json({
             status: "stream",
-            url: data.videoUrl,
-            title: data.title || "YouTube Video",
-            thumbnail: data.thumbnail,
+            url: pickerItems[0].url,
+            title,
+            thumbnail,
             source: "YouTube",
-            picker: [
-              { url: data.videoUrl, type: "video", quality: "720p (Direct)", extension: "mp4" }
-            ]
+            picker: pickerItems
           });
         }
       } catch (err) {
-        console.warn("Ryzumi YTMP4 failed, trying Cobalt fallback...");
+        console.warn("Ryzumi Specialized failed, trying Cobalt fallback...");
       }
 
       // Fallback ke Cobalt jika Ryzumi YTMP4 gagal
