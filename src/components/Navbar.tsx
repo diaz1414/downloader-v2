@@ -30,6 +30,8 @@ export function Navbar() {
     { code: "id", name: "Indonesia" },
     { code: "ar", name: "العربية" },
     { code: "ja", name: "日本語" },
+    { code: "su", name: "Sunda" },
+    { code: "jv", name: "Jawa" },
     { code: "es", name: "Español" },
     { code: "fr", name: "Français" },
     { code: "de", name: "Deutsch" },
@@ -37,7 +39,7 @@ export function Navbar() {
 
   const navLinks = [
     { href: "/", label: t("navbar.home") },
-    { href: "/archives", label: t("navbar.archives") },
+    { href: "/about", label: t("navbar.archives") },
     { href: "/privacy", label: t("navbar.privacy") },
   ]
 
@@ -100,7 +102,7 @@ export function Navbar() {
 
           {/* Github Link (Desktop) */}
           <a
-            href="https://github.com/imputnet/cobalt"
+            href="https://github.com/diaz1414"
             target="_blank"
             rel="noreferrer"
             className="hidden md:block p-2 hover:bg-accent/10 transition-colors text-foreground"

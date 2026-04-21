@@ -7,6 +7,8 @@ import { Hero } from "@/components/Hero"
 import { ResultSection } from "@/components/ResultSection"
 import { FeatureGrid } from "@/components/FeatureGrid"
 import { TutorialSection } from "@/components/TutorialSection"
+import Link from "next/link"
+
 
 export default function Home() {
   const [result, setResult] = useState<any>(null)
@@ -55,9 +57,9 @@ export default function Home() {
           </div>
 
           <div className="flex flex-wrap gap-8 text-[10px] font-mono font-bold uppercase tracking-widest">
-            <a href="/privacy" className="hover:text-accent transition-colors">Privacy</a>
-            <a href="/terms" className="hover:text-accent transition-colors">Terms</a>
-            <a href="/contact" className="hover:text-accent transition-colors">Support</a>
+            <Link href="/privacy" className="hover:text-accent transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-accent transition-colors">Terms</Link>
+            <Link href="/contact" className="hover:text-accent transition-colors">Support</Link>
             <span className="opacity-20">© 2026 DIAW DOWNLOADER V2</span>
           </div>
         </div>

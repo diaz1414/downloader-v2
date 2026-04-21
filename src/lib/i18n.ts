@@ -10,6 +10,9 @@ import fr from "@/locales/fr/common.json"
 import de from "@/locales/de/common.json"
 import ar from "@/locales/ar/common.json"
 import ja from "@/locales/ja/common.json"
+import su from "@/locales/su/common.json"
+import jv from "@/locales/jv/common.json"
+
 
 i18n.use(initReactI18next).init({
   resources: {
@@ -20,6 +23,8 @@ i18n.use(initReactI18next).init({
     de: { translation: de },
     ar: { translation: ar },
     ja: { translation: ja },
+    su: { translation: su },
+    jv: { translation: jv },
   },
   lng: "en",
   fallbackLng: "en",

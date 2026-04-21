@@ -1,0 +1,40 @@
+{
+  "hero": {
+    "title": "DIAW // Pangunduh Media Banter",
+    "subtitle": "Pangunduh Media Sosial Serba Ono. Ekstrak video lan gambar kualitas dhuwur seko TikTok, Instagram, YouTube, lan liyane tanpa nglacak.",
+    "input_placeholder": "Tempel tautan sampeyan ing kene (misal: Instagram Reel, TikTok, lsp.)",
+    "button_fetch": "Unduh Media",
+    "button_fetching": "Lagi Ngunduh...",
+    "button_success": "Berhasil!"
+  },
+  "features": {
+    "title": "Platform Sing Dirojong.",
+    "subtitle": "Protokol ekstraksi universal kanggo media digital."
+  },
+  "tutorial": {
+    "title": "Piye Cara Nganggone.",
+    "step_label": "Langkah",
+    "step1": {
+      "title": "Salin Tautan",
+      "desc": "Bukak aplikasi media sosial lan salin tautan media sing pengen diunduh."
+    },
+    "step2": {
+      "title": "Tempel ing Kene",
+      "desc": "Tempelake tautan menyang kolom input ing ndhuwur."
+    },
+    "step3": {
+      "title": "Unduh & Simpen",
+      "desc": "Klik tombol unduh lan simpen media langsung menyang piranti sampeyan."
+    }
+  },
+  "navbar": {
+    "home": "Omah",
+    "archives": "Tentang",
+    "privacy": "Privasi",
+    "subtext": "Pengunduh Profesional"
+  },
+  "errors": {
+    "invalid_url": "Tautan ora valid. Tulung dipriksa maneh.",
+    "fetch_failed": "Gagal njupuk media. Tulung jajal maneh."
+  }
+}
