@@ -12,24 +12,21 @@
 
 @layer base {
   :root {
-    --background: var(--color-hindia-off-white);
-    --foreground: var(--color-hindia-black);
-    --border: var(--color-hindia-black);
-    --accent: var(--color-hindia-maroon);
-  }
-
-  .dark {
-    --background: var(--color-hindia-black);
-    --foreground: var(--color-hindia-off-white);
-    --border: rgba(245, 245, 245, 0.2);
-    --accent: var(--color-hindia-gold);
+    --background: #0a0a0a;
+    --foreground: #f5f5f5;
+    --border: rgba(245, 245, 245, 0.15);
+    --accent: #d4af37;
+    
+    --color-hindia-off-white: #f5f5f5;
+    --color-hindia-black: #0a0a0a;
+    --color-hindia-maroon: #800000;
+    --color-hindia-gold: #d4af37;
   }
 
   body {
-    background-color: var(--background);
+    background-color: var(--background) !important;
     color: var(--foreground);
     font-family: var(--font-mono);
-    transition: background-color 0.5s ease;
     overflow-x: hidden;
   }
 

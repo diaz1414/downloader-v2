@@ -52,7 +52,7 @@ export function ThemeToggle() {
         onClick={toggleTheme}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        className="relative p-2 rounded-full border border-border bg-background/50 backdrop-blur-md overflow-hidden"
+        className="relative p-2 rounded-none border border-border bg-background/50 backdrop-blur-md overflow-hidden"
       >
         <AnimatePresence mode="wait">
           {theme === "dark" ? (

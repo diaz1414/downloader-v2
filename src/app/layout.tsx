@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { Fraunces, JetBrains_Mono } from "next/font/google"
 import "@/app/globals.css"
-import { ThemeProvider } from "@/components/ThemeProvider"
 import { I18nProvider } from "@/components/I18nProvider"
 
 const serif = Fraunces({
@@ -28,22 +27,15 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${serif.variable} ${mono.variable} antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <I18nProvider>
-            {/* Texture Overlay */}
-            <div className="grain-overlay" />
-            
-            {/* Main Content */}
-            <main className="relative z-10 min-h-screen">
-              {children}
-            </main>
-          </I18nProvider>
-        </ThemeProvider>
+        <I18nProvider>
+          {/* Texture Overlay */}
+          <div className="grain-overlay" />
+          
+          {/* Main Content */}
+          <main className="relative z-10 min-h-screen">
+            {children}
+          </main>
+        </I18nProvider>
       </body>
     </html>
   )

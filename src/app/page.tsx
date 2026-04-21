@@ -40,16 +40,16 @@ export default function Home() {
           <div className="space-y-6">
             <h2 className="text-4xl font-serif">HINDIA</h2>
             <p className="text-[10px] font-mono uppercase tracking-[0.3em] opacity-40 max-w-xs leading-loose">
-              A universal digital extraction protocol designed for speed and reliability.
-              Crafted with precision. No tracking. No logs.
+              The ultimate tool for high-quality social media content extraction. <br />
+              Safe, fast, and private. No tracking. No logs.
             </p>
           </div>
           
           <div className="flex flex-wrap gap-8 text-[10px] font-mono font-bold uppercase tracking-widest">
-            <a href="#" className="hover:text-accent transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-accent transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-accent transition-colors">Contact Support</a>
-            <span className="opacity-20">© 2026 HINDIA // v10.4.0</span>
+            <a href="/privacy" className="hover:text-accent transition-colors">Privacy Policy</a>
+            <a href="/terms" className="hover:text-accent transition-colors">Terms of Service</a>
+            <a href="/contact" className="hover:text-accent transition-colors">Support</a>
+            <span className="opacity-20">© 2026 HINDIA</span>
           </div>
         </div>
       </footer>

@@ -38,7 +38,7 @@ export function SmartSearchBar({ onResult }: { onResult: (data: any) => void }) 
       setTimeout(() => setStatus("idle"), 3000)
     } catch (error: any) {
       setStatus("error")
-      setErrorMessage(error.message)
+      setErrorMessage("Something went wrong with the server. Please try again.")
       setTimeout(() => setStatus("idle"), 5000)
     }
   }
@@ -56,9 +56,9 @@ export function SmartSearchBar({ onResult }: { onResult: (data: any) => void }) 
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleDownload()}
-            placeholder={t("hero.input_placeholder")}
+            placeholder="Paste your link here (e.g., Instagram Reel, TikTok, etc.)"
             suppressHydrationWarning
-            className="flex-1 bg-transparent border-none focus:ring-0 text-base py-6 outline-none font-mono placeholder:opacity-30 uppercase"
+            className="flex-1 bg-transparent border-none focus:ring-0 text-xs md:text-sm py-6 outline-none font-mono placeholder:opacity-30 uppercase"
           />
 
           <div className="pr-4">
@@ -91,7 +91,7 @@ export function SmartSearchBar({ onResult }: { onResult: (data: any) => void }) 
                     key="idle"
                     className="flex items-center gap-2"
                   >
-                    <span className="font-bold uppercase text-[10px] tracking-widest">Execute Download</span>
+                    <span className="font-bold uppercase text-[10px] tracking-widest">Fetch Media</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </motion.div>
                 )}
@@ -116,6 +116,15 @@ export function SmartSearchBar({ onResult }: { onResult: (data: any) => void }) 
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+
+      <div className="flex justify-between items-center px-4 py-2 border border-border/20 bg-background/50">
+        <div className="text-[9px] font-mono uppercase tracking-[0.2em] opacity-40">
+          [STATUS: {status === "fetching" ? "BUSY" : "READY"}]
+        </div>
+        <div className="text-[9px] font-mono uppercase tracking-[0.2em] opacity-40">
+          Secure Extraction Protocol v1.0
+        </div>
       </div>
 
       <AnimatePresence>

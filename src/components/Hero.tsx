@@ -19,7 +19,7 @@ const staggeredVariants: Variants = {
 
 export function Hero({ onResult }: { onResult: (data: any) => void }) {
   const { t } = useTranslation()
-  const title = "Digital Extraction Document."
+  const title = "Professional Media Downloader"
 
   return (
     <section className="relative pt-40 pb-20 px-6 overflow-hidden">
@@ -27,31 +27,19 @@ export function Hero({ onResult }: { onResult: (data: any) => void }) {
         
         {/* Editorial Title */}
         <div className="space-y-4">
-          <h1 className="text-5xl md:text-8xl font-serif tracking-tight leading-[0.9]">
-            {title.split(" ").map((word, wordIdx) => (
-              <span key={wordIdx} className="inline-block whitespace-nowrap mr-4">
-                {word.split("").map((char, charIdx) => (
-                  <motion.span
-                    key={charIdx}
-                    custom={wordIdx * 5 + charIdx}
-                    initial="hidden"
-                    animate="visible"
-                    variants={staggeredVariants}
-                    className="inline-block"
-                  >
-                    {char}
-                  </motion.span>
-                ))}
-              </span>
-            ))}
+          <h1 className="text-4xl md:text-7xl font-serif tracking-tight leading-[1.1] uppercase">
+            HINDIA // <br className="md:hidden" />
+            <span className="opacity-50">High-Speed</span> <br />
+            Media Downloader
           </h1>
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1, duration: 1 }}
-            className="text-sm md:text-base font-mono uppercase tracking-[0.3em] opacity-60"
+            className="text-xs md:text-sm font-mono uppercase tracking-[0.2em] opacity-60 max-w-2xl mx-auto leading-relaxed"
           >
-            Universal Media Protocol // v10.4
+            All-in-One Social Media Downloader. <br />
+            Extract high-quality videos and images from TikTok, Instagram, YouTube, and more with zero tracking.
           </motion.p>
         </div>
 
