@@ -38,7 +38,8 @@ export function SmartSearchBar({ onResult }: { onResult: (data: any) => void }) 
       setTimeout(() => setStatus("idle"), 3000)
     } catch (error: any) {
       setStatus("error")
-      setErrorMessage(t("errors.fetch_failed"))
+      const message = error.response?.data?.text || error.message || t("errors.fetch_failed")
+      setErrorMessage(message)
       setTimeout(() => setStatus("idle"), 5000)
     }
   }
