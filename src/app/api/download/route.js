@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 
-export const runtime = "nodejs";
+// FIX 1: Gunakan Edge Runtime untuk menghindari timeout 10 detik di Vercel (Edge punya 30 detik)
+export const runtime = "edge";
 
 // !!! GANTI DENGAN URL CLOUDFLARE WORKER ANDA !!!
 const CF_WORKER_PROXY = "https://downloader-v2.ferdiazprasida.workers.dev";
 
-// Extended timeout
+// Fetch dengan timeout yang lebih disiplin
 async function fetchWithTimeout(url, options = {}) {
-  const { timeout = 30000 } = options;
+  const { timeout = 8000 } = options; // Default 8 detik
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   try {
@@ -23,16 +24,15 @@ async function fetchWithTimeout(url, options = {}) {
   }
 }
 
-// Proxy Wrapper (Using Personal Cloudflare Worker)
+// Proxy Wrapper (Cloudflare Worker)
 async function fetchWithProxy(url, options = {}) {
   if (!CF_WORKER_PROXY || CF_WORKER_PROXY.includes("URL_WORKER_ANDA")) {
-    console.warn("[PROXY_PROTOCOL] Cloudflare Worker URL belum diisi. Mencoba CodeTabs sebagai cadangan...");
-    const codetabsUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
-    return fetchWithTimeout(codetabsUrl, options);
+    console.warn("[PROXY] URL Worker belum diisi. Mencoba direct...");
+    return fetchWithTimeout(url, options);
   }
 
   const proxyUrl = `${CF_WORKER_PROXY}/?url=${encodeURIComponent(url)}`;
-  console.log(`[PROXY_PROTOCOL] Proxying via Cloudflare Worker to: ${url}`);
+  console.log(`[PROXY] Routing via Worker to: ${url}`);
   return fetchWithTimeout(proxyUrl, options);
 }
 
@@ -43,38 +43,61 @@ export async function POST(req) {
 
     if (!url) return NextResponse.json({ status: "error", text: "URL is required" }, { status: 400 });
 
-    // Clean URL
+    // Sanitize URL
     try {
-      if (url.includes("instagram.com") || url.includes("tiktok.com")) {
+      if (url.includes("instagram.com") || url.includes("tiktok.com") || url.includes("vt.tiktok")) {
         const urlObj = new URL(url);
         url = `${urlObj.origin}${urlObj.pathname}`;
       }
-    } catch (e) {
-      console.warn("URL Parsing failed");
-    }
+    } catch (e) {}
 
-    const isYoutube = url.includes("youtube.com") || url.includes("youtu.be");
-    const isTiktok = url.includes("tiktok.com");
+    const isTiktok = url.includes("tiktok.com") || url.includes("vt.tiktok");
     const isInstagram = url.includes("instagram.com");
 
-    // Browser headers + IP Spoofing attempt
     const headers = {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
       "Accept": "application/json",
       "X-Forwarded-For": Array.from({ length: 4 }, () => Math.floor(Math.random() * 255)).join('.'),
     };
 
-    console.log(`[HYBRID_PROTOCOL] [JS_VERSION] Processing: ${url}`);
+    console.log(`[PROCESS] Target: ${url}`);
 
-    // 1. INSTAGRAM PRIORITY (Chocomilk)
+    // 1. TIKTOK PRIORITY (TikWM)
+    if (isTiktok) {
+      try {
+        console.log("[TIKTOK] Trying TikWM...");
+        let tikRes = await fetchWithTimeout(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`, { headers, timeout: 6000 });
+        
+        if (!tikRes.ok || tikRes.status === 403) {
+          console.log("[TIKTOK] TikWM Direct Blocked, trying Proxy...");
+          tikRes = await fetchWithProxy(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`, { headers });
+        }
+
+        const d = await tikRes.json();
+        if (d.code === 0 && d.data) {
+          return NextResponse.json({
+            status: "success",
+            url: d.data.play,
+            title: d.data.title || "TikTok Video",
+            source: "TikWM Protocol",
+            picker: [
+              { url: d.data.play, type: "video", quality: "HD (No Watermark)", extension: "mp4" },
+              { url: d.data.wmplay, type: "video", quality: "Watermark", extension: "mp4" },
+              { url: d.data.music, type: "audio", quality: "Music Only", extension: "mp3" }
+            ]
+          });
+        }
+      } catch (e) { console.warn("[TIKTOK] TikWM Failed"); }
+    }
+
+    // 2. INSTAGRAM PRIORITY (Chocomilk)
     if (isInstagram) {
       try {
-        console.log("[HYBRID_PROTOCOL] Trying Chocomilk (Direct)...");
-        let cocoRes = await fetchWithTimeout(`https://chocomilk.amira.us.kg/v1/download/instagram?url=${encodeURIComponent(url)}`, { headers, timeout: 10000 });
+        console.log("[INSTAGRAM] Trying Chocomilk...");
+        let cocoRes = await fetchWithTimeout(`https://chocomilk.amira.us.kg/v1/download/instagram?url=${encodeURIComponent(url)}`, { headers, timeout: 6000 });
 
-        // Fallback to Proxy if Direct fails or blocks
         if (!cocoRes.ok || cocoRes.status === 403) {
-          console.log("[HYBRID_PROTOCOL] Chocomilk Direct Blocked, trying Proxy...");
+          console.log("[INSTAGRAM] Chocomilk Blocked, trying Proxy...");
           cocoRes = await fetchWithProxy(`https://chocomilk.amira.us.kg/v1/download/instagram?url=${encodeURIComponent(url)}`, { headers });
         }
 
@@ -84,51 +107,27 @@ export async function POST(req) {
           const mediaUrl = data.url || (Array.isArray(data) ? data[0]?.url : null);
           if (mediaUrl) {
             return NextResponse.json({
-              status: "stream",
+              status: "success",
               url: mediaUrl,
               title: data.title || "Instagram Content",
-              source: "Instagram (Chocomilk + Proxy)",
+              source: "Chocomilk Protocol",
               picker: [{ url: mediaUrl, type: "video", quality: "HD", extension: "mp4" }]
             });
           }
         }
-      } catch (e) { console.warn("Chocomilk Failed even with Proxy"); }
+      } catch (e) { console.warn("[INSTAGRAM] Chocomilk Failed"); }
     }
 
-    // 2. COBALT PROTOCOL (Universal)
+    // 3. UNIVERSAL FALLBACK (Ryzumi AIO)
     try {
-      console.log("[HYBRID_PROTOCOL] Trying Cobalt...");
-      const cobaltRes = await fetchWithTimeout("https://api.cobalt.tools/api/json", {
-        method: "POST",
-        headers: { "Accept": "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ url, videoQuality: "720" }),
-        timeout: 20000
-      });
-      if (cobaltRes.ok) {
-        const d = await cobaltRes.json();
-        if (d.status === "stream" || d.status === "redirect") {
-          return NextResponse.json({
-            status: "stream",
-            url: d.url,
-            title: d.filename || "Extracted Media",
-            source: "Cobalt Protocol",
-            picker: [{ url: d.url, type: "video", quality: "HD", extension: "mp4" }]
-          });
-        }
-      }
-    } catch (e) { console.warn("Cobalt Failed"); }
-
-    // 3. RYZUMI AIO (Universal Fallback)
-    try {
-      console.log("[HYBRID_PROTOCOL] Trying Ryzumi AIO (Direct)...");
+      console.log("[UNIVERSAL] Trying Ryzumi AIO...");
       let ryzumiRes = await fetchWithTimeout(`https://api.ryzumi.net/api/downloader/all-in-one?url=${encodeURIComponent(url)}`, {
         headers: { ...headers, "Referer": "https://ryzumi.net/" },
-        timeout: 15000
+        timeout: 8000
       });
 
-      // Fallback to Proxy for Ryzumi
       if (!ryzumiRes.ok || ryzumiRes.status === 403) {
-        console.log("[HYBRID_PROTOCOL] Ryzumi Blocked, trying Proxy...");
+        console.log("[UNIVERSAL] Ryzumi Blocked, trying Proxy...");
         ryzumiRes = await fetchWithProxy(`https://api.ryzumi.net/api/downloader/all-in-one?url=${encodeURIComponent(url)}`, {
           headers: { ...headers, "Referer": "https://ryzumi.net/" }
         });
@@ -138,23 +137,28 @@ export async function POST(req) {
         const data = await ryzumiRes.json();
         if (data && data.medias && data.medias.length > 0) {
           return NextResponse.json({
-            status: "stream",
+            status: "success",
             url: data.medias[0].url,
             title: data.title || "Universal Result",
-            source: "Ryzumi AIO + Proxy",
-            picker: data.medias.map(m => ({ url: m.url, type: m.type || "video", quality: m.quality || "HD", extension: m.extension || "mp4" }))
+            source: "Ryzumi AIO Protocol",
+            picker: data.medias.map(m => ({ 
+              url: m.url, 
+              type: m.type || "video", 
+              quality: m.quality || "HD", 
+              extension: m.extension || "mp4" 
+            }))
           });
         }
       }
-    } catch (e) { console.warn("Ryzumi Failed even with Proxy"); }
+    } catch (e) { console.warn("[UNIVERSAL] Ryzumi Failed"); }
 
     return NextResponse.json({
       status: "error",
-      text: "Maaf, semua protokol (Chocomilk, Cobalt, Ryzumi) gagal. Link mungkin privat atau server sedang sibuk."
+      text: "Maaf, semua protokol gagal mendapatkan data. Link mungkin privat atau server sedang sibuk."
     }, { status: 200 });
 
   } catch (error) {
     console.error("[CRITICAL_ERROR]", error);
-    return NextResponse.json({ status: "error", text: "Protokol Kritis Gagal (JS)." }, { status: 500 });
+    return NextResponse.json({ status: "error", text: "Terjadi kesalahan internal pada protokol." }, { status: 500 });
   }
 }
