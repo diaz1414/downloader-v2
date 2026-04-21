@@ -13,7 +13,7 @@ async function fetchWithAnt(url: string, options: any = {}) {
 
   // Kita bungkus URL asli ke dalam API ScrapingAnt
   // browser=false digunakan karena kita hanya menembak API (JSON), bukan render website
-  const proxyUrl = `https://api.scrapingant.com/v1/general?url=${encodeURIComponent(url)}&x-api-key=${ANT_API_KEY}&browser=false`;
+  const proxyUrl = `https://api.scrapingant.com/v2/general?url=${encodeURIComponent(url)}&x-api-key=${ANT_API_KEY}&browser=false`;
 
   try {
     const response = await fetch(proxyUrl, {
