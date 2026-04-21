@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     // 1. JALUR COBALT (PRIORITAS UTAMA - PALING SAKTI)
     // Cobalt biasanya langsung jalan di Vercel tanpa butuh proxy
     try {
-      const res = await fetch("https://api.cobalt.tools/api/json", {
+      const res = await fetch("https://cobalt-api.meowing.de/api/json", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json", 
