@@ -2,16 +2,39 @@ import { NextResponse } from "next/server";
 
 export const runtime = "edge";
 
-// Helper for fetch with timeout
+// Ganti dengan API Key dari dashboard ScrapingAnt kamu
+const ANT_API_KEY = "b64b4ddbe94240de97808fdeedae26c2";
+
+// Helper untuk fetch dengan timeout + ScrapingAnt Integration
+async function fetchWithAnt(url: string, options: any = {}) {
+  const { timeout = 20000 } = options;
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+
+  // Kita bungkus URL asli ke dalam API ScrapingAnt
+  // browser=false digunakan karena kita hanya menembak API (JSON), bukan render website
+  const proxyUrl = `https://api.scrapingant.com/v1/general?url=${encodeURIComponent(url)}&x-api-key=${ANT_API_KEY}&browser=false`;
+
+  try {
+    const response = await fetch(proxyUrl, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    throw error;
+  }
+}
+
+// Fungsi Fetch standar tetap ada untuk cadangan
 async function fetchWithTimeout(url: string, options: any = {}) {
   const { timeout = 15000 } = options;
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-    });
+    const response = await fetch(url, { ...options, signal: controller.signal });
     clearTimeout(id);
     return response;
   } catch (error) {
@@ -33,19 +56,16 @@ export async function POST(req: Request) {
     const isTiktok = url.includes("tiktok.com");
     const isInstagram = url.includes("instagram.com");
 
-    // Spoofing Headers to bypass Data Center blocks
     const randomIP = Array.from({ length: 4 }, () => Math.floor(Math.random() * 255)).join('.');
     const baseHeaders = {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
       "Accept": "application/json",
-      "Accept-Language": "en-US,en;q=0.9",
       "X-Forwarded-For": randomIP,
-      "X-Real-IP": randomIP,
     };
 
-    console.log(`[PROCESS] Target: ${url} (Spoof IP: ${randomIP})`);
+    console.log(`[PROCESS] Target: ${url} (Region: sin1)`);
 
-    // 1. TIKTOK PRIORITY (TikWM)
+    // 1. TIKTOK PRIORITY
     if (isTiktok) {
       try {
         const twmRes = await fetchWithTimeout(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`, {
@@ -68,16 +88,15 @@ export async function POST(req: Request) {
             ]
           });
         }
-      } catch (e) { console.warn("TikTok Priority Failed"); }
+      } catch (e) { console.warn("TikTok Failed"); }
     }
 
-    // 2. INSTAGRAM PRIORITY (Chocomilk & Ryzumi IG)
+    // 2. INSTAGRAM PRIORITY (Using ScrapingAnt for Ryzumi)
     if (isInstagram) {
-      // Prioritas 1: Chocomilk
+      // Prioritas 1: Chocomilk (Sering tembus tanpa proxy)
       try {
         const cocoRes = await fetchWithTimeout(`https://chocomilk.amira.us.kg/v1/download/instagram?url=${encodeURIComponent(url)}`, {
-          headers: { ...baseHeaders, "Referer": "https://chocomilk.amira.us.kg/" },
-          timeout: 8000
+          headers: { ...baseHeaders, "Referer": "https://chocomilk.amira.us.kg/" }
         });
         if (cocoRes.ok) {
           const d = await cocoRes.json();
@@ -94,14 +113,11 @@ export async function POST(req: Request) {
             });
           }
         }
-      } catch (e) { console.warn("Instagram Chocomilk Failed"); }
+      } catch (e) { console.warn("IG Chocomilk Failed"); }
 
-      // Prioritas 2: Ryzumi Specialized IG
+      // Prioritas 2: Ryzumi (Wajib pakai ScrapingAnt karena 403 di Vercel)
       try {
-        const igRes = await fetchWithTimeout(`https://api.ryzumi.net/api/downloader/instagram?url=${encodeURIComponent(url)}`, {
-          headers: { ...baseHeaders, "Referer": "https://ryzumi.net/" },
-          timeout: 10000
-        });
+        const igRes = await fetchWithAnt(`https://api.ryzumi.net/api/downloader/instagram?url=${encodeURIComponent(url)}`);
         if (igRes.ok) {
           const data = await igRes.json();
           if (data && data.medias && data.medias.length > 0) {
@@ -110,28 +126,22 @@ export async function POST(req: Request) {
               url: data.medias[0].url,
               title: data.title || "Instagram Content",
               thumbnail: data.thumbnail,
-              source: "Instagram Protocol (v2)",
+              source: "Instagram Protocol (v2 - Ant)",
               picker: data.medias.map((m: any) => ({
                 url: m.url, type: m.type, quality: m.quality || "HD", extension: m.extension || "mp4"
               }))
             });
           }
         }
-      } catch (e) { console.warn("Instagram Ryzumi Failed"); }
+      } catch (e) { console.warn("IG Ryzumi Ant Failed"); }
     }
 
-    // 3. YOUTUBE PRIORITY (Specialized Ryzumi)
+    // 3. YOUTUBE PRIORITY (Using ScrapingAnt)
     if (isYoutube) {
       try {
         const [mp4Res, mp3Res] = await Promise.allSettled([
-          fetchWithTimeout(`https://api.ryzumi.net/api/downloader/ytmp4?url=${encodeURIComponent(url)}`, {
-            headers: { ...baseHeaders, "Referer": "https://ryzumi.net/" },
-            timeout: 15000
-          }),
-          fetchWithTimeout(`https://api.ryzumi.net/api/downloader/ytmp3?url=${encodeURIComponent(url)}`, {
-            headers: { ...baseHeaders, "Referer": "https://ryzumi.net/" },
-            timeout: 15000
-          })
+          fetchWithAnt(`https://api.ryzumi.net/api/downloader/ytmp4?url=${encodeURIComponent(url)}`),
+          fetchWithAnt(`https://api.ryzumi.net/api/downloader/ytmp3?url=${encodeURIComponent(url)}`)
         ]);
 
         const pickerItems = [];
@@ -156,23 +166,17 @@ export async function POST(req: Request) {
           return NextResponse.json({
             status: "stream",
             url: pickerItems[0].url,
-            title,
-            thumbnail,
-            source: "YouTube Protocol",
+            title, thumbnail,
+            source: "YouTube Protocol (Ant)",
             picker: pickerItems
           });
         }
-      } catch (err) { console.warn("YouTube Priority Failed"); }
+      } catch (err) { console.warn("YouTube Ant Failed"); }
     }
 
-    // 4. UNIVERSAL FALLBACK (Ryzumi AIO)
+    // 4. UNIVERSAL FALLBACK
     try {
-      const ryzumiRes = await fetchWithTimeout(`https://api.ryzumi.net/api/downloader/all-in-one?url=${encodeURIComponent(url)}`, {
-        headers: { ...baseHeaders, "Referer": "https://ryzumi.net/" },
-        timeout: 20000,
-        cache: 'no-store'
-      });
-
+      const ryzumiRes = await fetchWithAnt(`https://api.ryzumi.net/api/downloader/all-in-one?url=${encodeURIComponent(url)}`);
       if (ryzumiRes.ok) {
         const data = await ryzumiRes.json();
         if (data && data.medias && data.medias.length > 0) {
@@ -181,19 +185,14 @@ export async function POST(req: Request) {
             url: data.medias[0].url,
             title: data.title || "Archive Result",
             thumbnail: data.thumbnail,
-            source: "Universal Protocol",
+            source: "Universal Protocol (Ant)",
             picker: data.medias.map((m: any) => ({
-              url: m.url,
-              type: m.type || "video",
-              quality: m.quality || m.extension || "HD",
-              extension: m.extension || "mp4"
+              url: m.url, type: m.type || "video", quality: m.quality || "HD", extension: m.extension || "mp4"
             }))
           });
         }
       }
-    } catch (err: any) {
-      console.error("[ALL_IN_ONE_ERROR]", err.message);
-    }
+    } catch (err: any) { console.error("[FALLBACK_ERROR]", err.message); }
 
     return NextResponse.json({
       status: "error",
@@ -202,6 +201,6 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error("[CRITICAL_ERROR]", error);
-    return NextResponse.json({ status: "error", text: "Terjadi kesalahan internal pada protokol." }, { status: 500 });
+    return NextResponse.json({ status: "error", text: "Terjadi kesalahan internal." }, { status: 500 });
   }
 }
