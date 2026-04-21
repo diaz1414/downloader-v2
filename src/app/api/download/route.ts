@@ -15,6 +15,11 @@ export async function POST(req: Request) {
     console.log("-----------------------------------");
     console.log(`Processing (${isYoutube ? "YouTube Specialized" : "Social"}):`, url);
 
+    // Headers to mimic a browser
+    const headers = {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    };
+
     // 1. JIKA YOUTUBE: Gunakan endpoint khusus Ryzumi
     if (isYoutube) {
       try {
@@ -22,8 +27,8 @@ export async function POST(req: Request) {
         
         // Parallel fetch for MP4 and MP3
         const [mp4Res, mp3Res] = await Promise.allSettled([
-          axios.get(`https://api.ryzumi.net/api/downloader/ytmp4`, { params: { url }, timeout: 10000 }),
-          axios.get(`https://api.ryzumi.net/api/downloader/ytmp3`, { params: { url }, timeout: 10000 })
+          axios.get(`https://api.ryzumi.net/api/downloader/ytmp4`, { params: { url }, timeout: 8000, headers }),
+          axios.get(`https://api.ryzumi.net/api/downloader/ytmp3`, { params: { url }, timeout: 8000, headers })
         ]);
 
         const pickerItems = [];
@@ -60,7 +65,7 @@ export async function POST(req: Request) {
       const YT_FALLBACKS = ["https://cobalt.canine.tools/api/json", "https://cobalt-api.meowing.de/api/json"];
       for (const instance of YT_FALLBACKS) {
         try {
-          const res = await axios.post(instance, { url, vQuality: "720" }, { timeout: 8000 });
+          const res = await axios.post(instance, { url, vQuality: "720" }, { timeout: 6000, headers: { ...headers, Accept: "application/json" } });
           if (res.data && (res.data.url || res.data.picker)) return NextResponse.json(res.data);
         } catch (e) { continue; }
       }
@@ -70,7 +75,8 @@ export async function POST(req: Request) {
     try {
       const ryzumiRes = await axios.get(`https://api.ryzumi.net/api/downloader/all-in-one`, {
         params: { url: url },
-        timeout: 15000
+        timeout: 9000,
+        headers
       });
 
       const data = ryzumiRes.data;
@@ -96,10 +102,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ 
       status: "error", 
-      text: "Maaf, server pengunduh sedang sibuk. Silakan coba lagi nanti." 
+      text: "Maaf, server pengunduh sedang sibuk atau URL tidak didukung. Silakan coba lagi nanti." 
     }, { status: 200 });
 
   } catch (error: any) {
-    return NextResponse.json({ status: "error", text: "Sistem error." }, { status: 500 });
+    return NextResponse.json({ status: "error", text: "Sistem error internal." }, { status: 500 });
   }
 }
