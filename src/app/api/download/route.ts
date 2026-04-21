@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     // 1. TIKTOK (TiklyDown - Lebih stabil dari TikWM)
     if (isTiktok) {
       try {
-        const res = await fetchWithProxy(`https://api.tiklydown.eu.org/api/download?url=${encodeURIComponent(url)}`);
+        const res = await fetchWithProxy(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`);
         const d = await res.json();
         if (d.video || d.data?.video) {
           const videoUrl = d.video?.noWatermark || d.data?.video?.noWatermark || d.url;
