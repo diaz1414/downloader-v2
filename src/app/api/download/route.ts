@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-// Extended timeout (30 seconds for forced Ryzumi, less for others)
+// Extended timeout
 async function fetchWithTimeout(url: string, options: any = {}) {
   const { timeout = 30000 } = options;
   const controller = new AbortController();
@@ -27,60 +27,124 @@ export async function POST(req: Request) {
 
     if (!url) return NextResponse.json({ status: "error", text: "URL is required" }, { status: 400 });
 
+    // 0. CLEAN URL (Strip tracking parameters)
+    try {
+      if (url.includes("instagram.com") || url.includes("tiktok.com") || url.includes("youtube.com") || url.includes("youtu.be")) {
+        const urlObj = new URL(url);
+        url = `${urlObj.origin}${urlObj.pathname}`;
+      }
+    } catch (e) {
+      console.warn("URL Parsing failed, using original");
+    }
+
     const isYoutube = url.includes("youtube.com") || url.includes("youtu.be");
     const isTiktok = url.includes("tiktok.com");
     const isInstagram = url.includes("instagram.com");
 
-    // Enhanced browser-like headers to reduce blocking
     const headers = {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-      "Accept": "application/json, text/plain, */*",
-      "Accept-Language": "en-US,en;q=0.9",
-      "Origin": "https://ryzumi.net",
-      "Referer": "https://ryzumi.net/",
-      "Sec-Ch-Ua": '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
-      "Sec-Ch-Ua-Mobile": "?0",
-      "Sec-Ch-Ua-Platform": '"Windows"',
-      "Sec-Fetch-Dest": "empty",
-      "Sec-Fetch-Mode": "cors",
-      "Sec-Fetch-Site": "same-site",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      "Accept": "application/json",
     };
 
     console.log(`[HYBRID_PROTOCOL] [${new Date().toISOString()}] Processing: ${url}`);
 
-    // 1. TIKTOK PRIORITY (TikWM)
+    // 1. INSTAGRAM PRIORITY (Chocomilk)
+    if (isInstagram) {
+      try {
+        console.log("[HYBRID_PROTOCOL] Attempting Chocomilk Instagram...");
+        const cocoRes = await fetchWithTimeout(`https://chocomilk.amira.us.kg/v1/download/instagram?url=${encodeURIComponent(url)}`, { headers, timeout: 15000 });
+        if (cocoRes.ok) {
+          const d = await cocoRes.json();
+          // Map result based on common API structures
+          const mediaUrl = d.result?.url || d.data?.url || d.url;
+          if (mediaUrl) {
+            console.log("[HYBRID_PROTOCOL] Chocomilk Success");
+            return NextResponse.json({
+              status: "stream",
+              url: mediaUrl,
+              title: d.result?.title || d.data?.title || d.title || "Instagram Content",
+              thumbnail: d.result?.thumbnail || d.data?.thumbnail || d.thumbnail,
+              source: "Instagram (Chocomilk)",
+              picker: [{ url: mediaUrl, type: "video", quality: "HD", extension: "mp4" }]
+            });
+          }
+        }
+      } catch (e: any) {
+        console.warn(`[HYBRID_PROTOCOL] Chocomilk Failed: ${e.message}`);
+      }
+    }
+
+    // 2. TIKTOK PRIORITY (TikWM)
     if (isTiktok) {
       try {
         console.log("[HYBRID_PROTOCOL] Attempting TikWM...");
         const twmRes = await fetchWithTimeout(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`, { headers, timeout: 10000 });
-        
-        if (twmRes.ok) {
-          const twmData = await twmRes.json();
-          if (twmData?.data) {
-            console.log("[HYBRID_PROTOCOL] TikWM Success");
-            const d = twmData.data;
-            return NextResponse.json({
-              status: "stream",
-              url: d.play,
-              title: d.title,
-              thumbnail: d.cover,
-              source: "TikTok",
-              picker: [
-                { url: d.play, type: "video", quality: "HD (NO-WM)", extension: "mp4" },
-                { url: d.music, type: "audio", quality: "AUDIO", extension: "mp3" }
-              ]
-            });
-          }
+        const twmData = await twmRes.json();
+        if (twmData?.data) {
+          console.log("[HYBRID_PROTOCOL] TikWM Success");
+          const d = twmData.data;
+          return NextResponse.json({
+            status: "stream",
+            url: d.play,
+            title: d.title,
+            thumbnail: d.cover,
+            source: "TikTok (TikWM)",
+            picker: [
+              { url: d.play, type: "video", quality: "HD (NO-WM)", extension: "mp4" },
+              { url: d.music, type: "audio", quality: "AUDIO", extension: "mp3" }
+            ]
+          });
         }
-      } catch (e: any) { 
-        console.warn(`[HYBRID_PROTOCOL] TikWM Failed: ${e.message}`); 
-      }
+      } catch (e: any) { console.warn(`TikWM Failed: ${e.message}`); }
     }
 
-    // 2. YOUTUBE PRIORITY (Specialized Ryzumi)
+    // 2. COBALT PROTOCOL (Highest Reliability for Instagram/Twitter/YouTube)
+    try {
+      console.log("[HYBRID_PROTOCOL] Attempting Cobalt Protocol...");
+      const cobaltRes = await fetchWithTimeout("https://api.cobalt.tools/api/json", {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          url: url,
+          videoQuality: "720",
+          filenameStyle: "pretty"
+        }),
+        timeout: 20000
+      });
+
+      if (cobaltRes.ok) {
+        const d = await cobaltRes.json();
+        if (d.status === "stream" || d.status === "redirect") {
+          console.log("[HYBRID_PROTOCOL] Cobalt Success");
+          return NextResponse.json({
+            status: "stream",
+            url: d.url,
+            title: d.filename || "Extracted Media",
+            source: "Cobalt Protocol",
+            picker: [{ url: d.url, type: "video", quality: "HD", extension: "mp4" }]
+          });
+        } else if (d.status === "picker") {
+          console.log("[HYBRID_PROTOCOL] Cobalt Picker Success");
+           return NextResponse.json({
+              status: "stream",
+              url: d.picker[0].url,
+              title: "Multiple Items Found",
+              source: "Cobalt Picker",
+              picker: d.picker.map((p: any) => ({ url: p.url, type: p.type || "video", quality: p.quality || "HD", extension: "mp4" }))
+           });
+        }
+      }
+    } catch (e: any) {
+      console.warn(`[HYBRID_PROTOCOL] Cobalt Failed: ${e.message}`);
+    }
+
+    // 3. YOUTUBE PRIORITY (Ryzumi)
     if (isYoutube) {
       try {
-        console.log("[HYBRID_PROTOCOL] Attempting YouTube Priority...");
+        console.log("[HYBRID_PROTOCOL] Attempting Ryzumi YouTube...");
         const [mp4Res, mp3Res] = await Promise.allSettled([
           fetchWithTimeout(`https://api.ryzumi.net/api/downloader/ytmp4?url=${encodeURIComponent(url)}`, { headers, timeout: 15000 }),
           fetchWithTimeout(`https://api.ryzumi.net/api/downloader/ytmp3?url=${encodeURIComponent(url)}`, { headers, timeout: 15000 })
@@ -105,49 +169,24 @@ export async function POST(req: Request) {
         }
 
         if (pickerItems.length > 0) {
-          console.log("[HYBRID_PROTOCOL] YouTube Success");
           return NextResponse.json({
             status: "stream",
             url: pickerItems[0].url,
             title,
             thumbnail,
-            source: "YouTube",
+            source: "YouTube (Ryzumi)",
             picker: pickerItems
           });
         }
-      } catch (err: any) { 
-        console.warn(`[HYBRID_PROTOCOL] YouTube Priority Failed: ${err.message}`); 
-      }
+      } catch (err) {}
     }
 
-    // 3. INSTAGRAM SPECIFIC (Optional optimization)
-    if (isInstagram) {
-      try {
-        console.log("[HYBRID_PROTOCOL] Attempting Ryzumi Instagram Specific...");
-        const igRes = await fetchWithTimeout(`https://api.ryzumi.net/api/downloader/instagram?url=${encodeURIComponent(url)}`, { headers, timeout: 15000 });
-        if (igRes.ok) {
-          const d = await igRes.json();
-          if (d.medias && d.medias.length > 0) {
-             return NextResponse.json({
-                status: "stream",
-                url: d.medias[0].url,
-                title: d.title || "Instagram Content",
-                thumbnail: d.thumbnail,
-                source: "Instagram",
-                picker: d.medias.map((m: any) => ({ url: m.url, type: m.type, quality: m.quality || "HD", extension: m.extension || "mp4" }))
-             });
-          }
-        }
-      } catch (e) {}
-    }
-
-    // 4. FORCED RYZUMI ALL-IN-ONE
+    // 4. RYZUMI ALL-IN-ONE (Universal Fallback)
     try {
-      console.log(`[HYBRID_PROTOCOL] Attempting Ryzumi All-In-One...`);
+      console.log("[HYBRID_PROTOCOL] Attempting Ryzumi AIO...");
       const ryzumiRes = await fetchWithTimeout(`https://api.ryzumi.net/api/downloader/all-in-one?url=${encodeURIComponent(url)}`, {
-        headers,
-        timeout: 30000,
-        cache: 'no-store'
+        headers: { ...headers, "Referer": "https://ryzumi.net/" },
+        timeout: 25000
       });
 
       if (ryzumiRes.ok) {
@@ -157,66 +196,47 @@ export async function POST(req: Request) {
           return NextResponse.json({
             status: "stream",
             url: data.medias[0].url,
-            title: data.title || "Archive Result",
+            title: data.title || "Universal Result",
             thumbnail: data.thumbnail,
-            source: data.source || "Universal Protocol",
-            author: data.author,
+            source: "Ryzumi AIO",
             picker: data.medias.map((m: any) => ({
               url: m.url,
               type: m.type || "video",
-              quality: m.quality || m.extension || "HD",
+              quality: m.quality || "HD",
               extension: m.extension || "mp4"
             }))
           });
         }
-      } else {
-        console.warn(`[HYBRID_PROTOCOL] Ryzumi AIO Failed (HTTP ${ryzumiRes.status}), attempting emergency fallback...`);
       }
-    } catch (err: any) {
-      console.error("[ALL_IN_ONE_ERROR]", err.message);
-    }
+    } catch (err: any) {}
 
-    // 5. EMERGENCY FALLBACK (SnapAny or Cobalt-like behavior)
+    // 5. SNAPANY (Final Emergency Fallback)
     try {
-      console.log("[HYBRID_PROTOCOL] Attempting Emergency Fallback (Universal)...");
-      const fallbackRes = await fetchWithTimeout(`https://api.snapany.com/api/allinone?url=${encodeURIComponent(url)}`, { 
-        headers: { "User-Agent": headers["User-Agent"] },
-        timeout: 20000 
-      });
-      
-      if (fallbackRes.ok) {
-        const d = await fallbackRes.json();
-        if (d.medias && d.medias.length > 0) {
-          console.log("[HYBRID_PROTOCOL] Emergency Fallback Success");
+      console.log("[HYBRID_PROTOCOL] Attempting SnapAny...");
+      const snapRes = await fetchWithTimeout(`https://api.snapany.com/api/allinone?url=${encodeURIComponent(url)}`, { headers, timeout: 15000 });
+      if (snapRes.ok) {
+        const d = await snapRes.json();
+        const medias = d.medias || d.data?.medias;
+        if (medias && medias.length > 0) {
+          console.log("[HYBRID_PROTOCOL] SnapAny Success");
           return NextResponse.json({
             status: "stream",
-            url: d.medias[0].url,
-            title: d.title || "Recovered Media",
-            thumbnail: d.thumbnail,
-            source: "Emergency Protocol",
-            picker: d.medias.map((m: any) => ({
-              url: m.url,
-              type: m.type || "video",
-              quality: m.quality || "Standard",
-              extension: m.extension || "mp4"
-            }))
+            url: medias[0].url,
+            title: d.title || "Archive Media",
+            source: "SnapAny Protocol",
+            picker: medias.map((m: any) => ({ url: m.url, type: m.type || "video", quality: m.quality || "HD", extension: m.extension || "mp4" }))
           });
         }
       }
-    } catch (e: any) {
-      console.error("[FALLBACK_ERROR]", e.message);
-    }
+    } catch (e) {}
 
     return NextResponse.json({
       status: "error",
-      text: "Maaf, semua protokol sedang sibuk atau link tidak didukung. Silakan coba lagi nanti atau gunakan link lain."
+      text: "Semua protokol (Cobalt, Ryzumi, SnapAny) gagal mengekstrak link ini. Link mungkin privat atau tidak didukung."
     }, { status: 200 });
 
   } catch (error: any) {
-    console.error("[CRITICAL_PROTOCOL_ERROR]", error);
-    return NextResponse.json({ 
-      status: "error", 
-      text: `Protokol Error: ${error.message || "Unknown error"}` 
-    }, { status: 500 });
+    console.error("[CRITICAL_ERROR]", error);
+    return NextResponse.json({ status: "error", text: "Protokol Kritis Gagal." }, { status: 500 });
   }
 }
