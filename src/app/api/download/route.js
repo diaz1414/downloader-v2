@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 
 // !!! GANTI DENGAN URL CLOUDFLARE WORKER ANDA !!!
-const CF_WORKER_PROXY = "https://codai-proxy.ferdiazprasida.workers.dev";
+const CF_WORKER_PROXY = "https://downloader-v2.ferdiazprasida.workers.dev";
 
 // Extended timeout
 async function fetchWithTimeout(url, options = {}) {
@@ -30,7 +30,7 @@ async function fetchWithProxy(url, options = {}) {
     const codetabsUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
     return fetchWithTimeout(codetabsUrl, options);
   }
-  
+
   const proxyUrl = `${CF_WORKER_PROXY}/?url=${encodeURIComponent(url)}`;
   console.log(`[PROXY_PROTOCOL] Proxying via Cloudflare Worker to: ${url}`);
   return fetchWithTimeout(proxyUrl, options);
@@ -61,7 +61,7 @@ export async function POST(req) {
     const headers = {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
       "Accept": "application/json",
-      "X-Forwarded-For": Array.from({length: 4}, () => Math.floor(Math.random() * 255)).join('.'),
+      "X-Forwarded-For": Array.from({ length: 4 }, () => Math.floor(Math.random() * 255)).join('.'),
     };
 
     console.log(`[HYBRID_PROTOCOL] [JS_VERSION] Processing: ${url}`);
@@ -71,7 +71,7 @@ export async function POST(req) {
       try {
         console.log("[HYBRID_PROTOCOL] Trying Chocomilk (Direct)...");
         let cocoRes = await fetchWithTimeout(`https://chocomilk.amira.us.kg/v1/download/instagram?url=${encodeURIComponent(url)}`, { headers, timeout: 10000 });
-        
+
         // Fallback to Proxy if Direct fails or blocks
         if (!cocoRes.ok || cocoRes.status === 403) {
           console.log("[HYBRID_PROTOCOL] Chocomilk Direct Blocked, trying Proxy...");
