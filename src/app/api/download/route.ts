@@ -29,9 +29,21 @@ export async function POST(req: Request) {
 
     const isYoutube = url.includes("youtube.com") || url.includes("youtu.be");
     const isTiktok = url.includes("tiktok.com");
+    const isInstagram = url.includes("instagram.com");
 
+    // Enhanced browser-like headers to reduce blocking
     const headers = {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+      "Accept": "application/json, text/plain, */*",
+      "Accept-Language": "en-US,en;q=0.9",
+      "Origin": "https://ryzumi.net",
+      "Referer": "https://ryzumi.net/",
+      "Sec-Ch-Ua": '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+      "Sec-Ch-Ua-Mobile": "?0",
+      "Sec-Ch-Ua-Platform": '"Windows"',
+      "Sec-Fetch-Dest": "empty",
+      "Sec-Fetch-Mode": "cors",
+      "Sec-Fetch-Site": "same-site",
     };
 
     console.log(`[HYBRID_PROTOCOL] [${new Date().toISOString()}] Processing: ${url}`);
@@ -42,9 +54,7 @@ export async function POST(req: Request) {
         console.log("[HYBRID_PROTOCOL] Attempting TikWM...");
         const twmRes = await fetchWithTimeout(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`, { headers, timeout: 10000 });
         
-        if (!twmRes.ok) {
-           console.warn(`[HYBRID_PROTOCOL] TikWM responded with status: ${twmRes.status}`);
-        } else {
+        if (twmRes.ok) {
           const twmData = await twmRes.json();
           if (twmData?.data) {
             console.log("[HYBRID_PROTOCOL] TikWM Success");
@@ -110,27 +120,37 @@ export async function POST(req: Request) {
       }
     }
 
-    // 3. FORCED RYZUMI ALL-IN-ONE (For Instagram and everything else)
+    // 3. INSTAGRAM SPECIFIC (Optional optimization)
+    if (isInstagram) {
+      try {
+        console.log("[HYBRID_PROTOCOL] Attempting Ryzumi Instagram Specific...");
+        const igRes = await fetchWithTimeout(`https://api.ryzumi.net/api/downloader/instagram?url=${encodeURIComponent(url)}`, { headers, timeout: 15000 });
+        if (igRes.ok) {
+          const d = await igRes.json();
+          if (d.medias && d.medias.length > 0) {
+             return NextResponse.json({
+                status: "stream",
+                url: d.medias[0].url,
+                title: d.title || "Instagram Content",
+                thumbnail: d.thumbnail,
+                source: "Instagram",
+                picker: d.medias.map((m: any) => ({ url: m.url, type: m.type, quality: m.quality || "HD", extension: m.extension || "mp4" }))
+             });
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 4. FORCED RYZUMI ALL-IN-ONE
     try {
-      console.log(`[HYBRID_PROTOCOL] Attempting Ryzumi All-In-One for: ${url}`);
+      console.log(`[HYBRID_PROTOCOL] Attempting Ryzumi All-In-One...`);
       const ryzumiRes = await fetchWithTimeout(`https://api.ryzumi.net/api/downloader/all-in-one?url=${encodeURIComponent(url)}`, {
         headers,
         timeout: 30000,
         cache: 'no-store'
       });
 
-      if (!ryzumiRes.ok) {
-        console.error(`[HYBRID_PROTOCOL] Ryzumi Error: HTTP ${ryzumiRes.status}`);
-        const errorText = await ryzumiRes.text().catch(() => "Unknown error");
-        console.error(`[HYBRID_PROTOCOL] Ryzumi Response Body: ${errorText.substring(0, 200)}`);
-        
-        if (ryzumiRes.status === 403 || ryzumiRes.status === 429) {
-          return NextResponse.json({
-            status: "error",
-            text: "Sistem (Ryzumi) membatasi akses dari server. Silakan coba lagi beberapa saat lagi."
-          }, { status: 200 });
-        }
-      } else {
+      if (ryzumiRes.ok) {
         const data = await ryzumiRes.json();
         if (data && data.medias && data.medias.length > 0) {
           console.log("[HYBRID_PROTOCOL] Ryzumi Success");
@@ -148,23 +168,48 @@ export async function POST(req: Request) {
               extension: m.extension || "mp4"
             }))
           });
-        } else {
-          console.warn("[HYBRID_PROTOCOL] Ryzumi returned no media");
         }
+      } else {
+        console.warn(`[HYBRID_PROTOCOL] Ryzumi AIO Failed (HTTP ${ryzumiRes.status}), attempting emergency fallback...`);
       }
     } catch (err: any) {
       console.error("[ALL_IN_ONE_ERROR]", err.message);
-      if (err.name === 'AbortError') {
-        return NextResponse.json({
-          status: "error",
-          text: "Waktu permintaan habis (Timeout). Server sedang sangat lambat."
-        }, { status: 200 });
+    }
+
+    // 5. EMERGENCY FALLBACK (SnapAny or Cobalt-like behavior)
+    try {
+      console.log("[HYBRID_PROTOCOL] Attempting Emergency Fallback (Universal)...");
+      const fallbackRes = await fetchWithTimeout(`https://api.snapany.com/api/allinone?url=${encodeURIComponent(url)}`, { 
+        headers: { "User-Agent": headers["User-Agent"] },
+        timeout: 20000 
+      });
+      
+      if (fallbackRes.ok) {
+        const d = await fallbackRes.json();
+        if (d.medias && d.medias.length > 0) {
+          console.log("[HYBRID_PROTOCOL] Emergency Fallback Success");
+          return NextResponse.json({
+            status: "stream",
+            url: d.medias[0].url,
+            title: d.title || "Recovered Media",
+            thumbnail: d.thumbnail,
+            source: "Emergency Protocol",
+            picker: d.medias.map((m: any) => ({
+              url: m.url,
+              type: m.type || "video",
+              quality: m.quality || "Standard",
+              extension: m.extension || "mp4"
+            }))
+          });
+        }
       }
+    } catch (e: any) {
+      console.error("[FALLBACK_ERROR]", e.message);
     }
 
     return NextResponse.json({
       status: "error",
-      text: "Maaf, sistem sedang sibuk atau tidak mendukung link ini. Silakan coba link lain."
+      text: "Maaf, semua protokol sedang sibuk atau link tidak didukung. Silakan coba lagi nanti atau gunakan link lain."
     }, { status: 200 });
 
   } catch (error: any) {
