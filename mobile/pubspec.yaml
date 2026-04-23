@@ -54,6 +54,7 @@ dependency_overrides:
   # Memaksa flutter untuk mengabaikan package bermasalah di Windows saat build Android
   path_provider_foundation: 2.4.0
   objective_c: 9.3.0
+  win32: 5.5.4
 
 flutter:
   uses-material-design: true
