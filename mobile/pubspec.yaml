@@ -1,0 +1,51 @@
+name: downloader_v2
+description: DIAW Downloader V2 — Premium Social Media Downloader
+publish_to: 'none'
+version: 2.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # HTTP
+  http: ^1.2.1
+  
+  # Fonts
+  google_fonts: ^6.2.1
+  
+  # Animations
+  flutter_animate: ^4.5.0
+  
+  # URL Launcher (open download links in browser)
+  url_launcher: ^6.3.0
+  
+  # Connectivity check (wajib internet)
+  connectivity_plus: ^6.0.5
+  
+  # Image caching for thumbnails
+  cached_network_image: ^3.3.1
+  
+  # Share
+  share_plus: ^9.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  fonts:
+    - family: Fraunces
+      fonts:
+        - asset: assets/fonts/Fraunces-Regular.ttf
+        - asset: assets/fonts/Fraunces-Bold.ttf
+          weight: 700
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Regular.ttf
+        - asset: assets/fonts/JetBrainsMono-Bold.ttf
+          weight: 700
