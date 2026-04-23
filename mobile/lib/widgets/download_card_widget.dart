@@ -29,16 +29,30 @@ class _DownloadCardWidgetState extends State<DownloadCardWidget> {
   Future<void> _downloadFile() async {
     if (_isDownloading) return;
 
-    // Check permissions
+    // Check permissions based on Android version
     if (Platform.isAndroid) {
-      final status = await Permission.storage.request();
-      if (status.isDenied) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('STORAGE_PERMISSION_DENIED')),
-          );
+      // Android 13 (API 33) and above use granular permissions
+      // We check if we are saving video or audio
+      if (widget.item.type == 'video' || widget.item.extension == 'mp4') {
+        final status = await Permission.videos.request();
+        if (status.isDenied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('VIDEO_PERMISSION_DENIED')),
+            );
+          }
+          return;
         }
-        return;
+      } else {
+        final status = await Permission.storage.request();
+        if (status.isDenied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('STORAGE_PERMISSION_DENIED')),
+            );
+          }
+          return;
+        }
       }
     }
 
