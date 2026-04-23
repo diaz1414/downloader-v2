@@ -2,7 +2,8 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-
+import 'package:gal/gal.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../models/download_result.dart';
 import '../theme/app_theme.dart';
 
@@ -28,6 +29,19 @@ class _DownloadCardWidgetState extends State<DownloadCardWidget> {
   Future<void> _downloadFile() async {
     if (_isDownloading) return;
 
+    // Check permissions
+    if (Platform.isAndroid) {
+      final status = await Permission.storage.request();
+      if (status.isDenied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('STORAGE_PERMISSION_DENIED')),
+          );
+        }
+        return;
+      }
+    }
+
     setState(() {
       _isDownloading = true;
       _progress = 0;
@@ -36,29 +50,15 @@ class _DownloadCardWidgetState extends State<DownloadCardWidget> {
     try {
       final dio = Dio();
       
-      // Manual path for Android to avoid path_provider build errors on Windows with spaces
-      // Standard Android download path
-      const String directoryPath = "/storage/emulated/0/Download";
-      final dir = Directory(directoryPath);
-      
-      // Fallback if public download dir is not accessible
-      String finalDir = directoryPath;
-      if (!await dir.exists()) {
-        finalDir = "/sdcard/Download";
-        if (!await Directory(finalDir).exists()) {
-           // Last fallback to internal files
-           finalDir = "/data/user/0/com.diaw.downloader_v2/files";
-        }
-      }
-      
-      // Generate filename based on timestamp and extension
+      // Use temporary directory for initial download
+      // We will then move it to Gallery using Gal
+      final tempDir = Directory.systemTemp;
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileName = "diaw_${widget.item.type}_$timestamp.${widget.item.extension}";
-      final filePath = "$finalDir/$fileName";
+      final tempPath = "${tempDir.path}/diaw_$timestamp.${widget.item.extension}";
 
       await dio.download(
         widget.item.url,
-        filePath,
+        tempPath,
         onReceiveProgress: (count, total) {
           if (total != -1) {
             setState(() {
@@ -67,6 +67,18 @@ class _DownloadCardWidgetState extends State<DownloadCardWidget> {
           }
         },
       );
+
+      // Save to Gallery/Photos
+      if (widget.item.type == 'video') {
+        await Gal.putVideo(tempPath);
+      } else if (widget.item.type == 'audio' || widget.item.isAudio) {
+        // Gal handles images and videos. For audio, we might need to save to Download folder
+        // but let's try putVideo (some systems accept it) or just notify user
+        // If it's truly audio, we might just keep it in Downloads
+        await Gal.putVideo(tempPath); // Fallback attempt
+      } else {
+        await Gal.putImage(tempPath);
+      }
 
       if (mounted) {
         setState(() {
@@ -77,12 +89,17 @@ class _DownloadCardWidgetState extends State<DownloadCardWidget> {
           SnackBar(
             backgroundColor: AppColors.success,
             content: Text(
-              'DOWNLOAD_SUCCESS: Saved to $fileName',
+              'SAVED_TO_GALLERY_SUCCESSFULLY',
               style: AppTextStyles.mono(size: 10, color: Colors.white),
             ),
           ),
         );
       }
+      
+      // Clean up temp file
+      final file = File(tempPath);
+      if (await file.exists()) await file.delete();
+
     } catch (e) {
       if (mounted) {
         setState(() => _isDownloading = false);

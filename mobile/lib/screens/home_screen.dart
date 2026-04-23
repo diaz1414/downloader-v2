@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:simple_icons/simple_icons.dart';
 import '../theme/app_theme.dart';
 import '../models/download_result.dart';
 import '../widgets/search_bar_widget.dart';
@@ -317,12 +318,12 @@ class _HeroSection extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 class _FeatureGridSection extends StatelessWidget {
   static const _platforms = [
-    _PlatformData('Instagram', Icons.camera_alt_rounded, Color(0xFFE4405F)),
-    _PlatformData('TikTok', Icons.music_video_rounded, Color(0xFF69C9D0)),
-    _PlatformData('YouTube', Icons.play_circle_fill_rounded, Color(0xFFFF0000)),
-    _PlatformData('Twitter/X', Icons.alternate_email_rounded, Color(0xFFD4AF37)),
-    _PlatformData('Pinterest', Icons.push_pin_rounded, Color(0xFFBD081C)),
-    _PlatformData('SoundCloud', Icons.audiotrack_rounded, Color(0xFFFF3300)),
+    _PlatformData('Instagram', SimpleIcons.instagram, Color(0xFFE4405F)),
+    _PlatformData('TikTok', SimpleIcons.tiktok, Colors.white),
+    _PlatformData('YouTube', SimpleIcons.youtube, Color(0xFFFF0000)),
+    _PlatformData('Twitter/X', SimpleIcons.x, Colors.white),
+    _PlatformData('Pinterest', SimpleIcons.pinterest, Color(0xFFBD081C)),
+    _PlatformData('SoundCloud', SimpleIcons.soundcloud, Color(0xFFFF3300)),
   ];
 
   @override
