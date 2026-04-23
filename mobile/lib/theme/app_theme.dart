@@ -46,6 +46,7 @@ class AppTextStyles {
     FontWeight weight = FontWeight.w400,
     Color color = AppColors.foreground,
     double letterSpacing = 1.5,
+    double? height,
     double? opacity,
   }) =>
       TextStyle(
@@ -54,6 +55,7 @@ class AppTextStyles {
         fontWeight: weight,
         color: opacity != null ? color.withOpacity(opacity) : color,
         letterSpacing: letterSpacing,
+        height: height,
       );
 }
 
