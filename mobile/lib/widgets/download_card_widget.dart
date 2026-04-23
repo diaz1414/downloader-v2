@@ -23,17 +23,26 @@ class DownloadCardWidget extends StatefulWidget {
 
 class _DownloadCardWidgetState extends State<DownloadCardWidget> {
   bool _isDownloading = false;
+  bool _isSuccess = false;
   double _progress = 0;
   bool _isHovered = false;
 
   Future<void> _downloadFile() async {
-    if (_isDownloading) return;
+    if (_isDownloading || _isSuccess) return;
 
     // Check permissions based on Android version
     if (Platform.isAndroid) {
-      // Android 13 (API 33) and above use granular permissions
-      // We check if we are saving video or audio
-      if (widget.item.type == 'video' || widget.item.extension == 'mp4') {
+      if (widget.item.type == 'audio' || widget.item.extension == 'mp3') {
+        final status = await Permission.audio.request();
+        if (status.isDenied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('AUDIO_PERMISSION_DENIED')),
+            );
+          }
+          return;
+        }
+      } else if (widget.item.type == 'video' || widget.item.extension == 'mp4') {
         final status = await Permission.videos.request();
         if (status.isDenied) {
           if (mounted) {
@@ -58,14 +67,12 @@ class _DownloadCardWidgetState extends State<DownloadCardWidget> {
 
     setState(() {
       _isDownloading = true;
+      _isSuccess = false;
       _progress = 0;
     });
 
     try {
       final dio = Dio();
-      
-      // Use temporary directory for initial download
-      // We will then move it to Gallery using Gal
       final tempDir = Directory.systemTemp;
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final tempPath = "${tempDir.path}/diaw_$timestamp.${widget.item.extension}";
@@ -82,14 +89,11 @@ class _DownloadCardWidgetState extends State<DownloadCardWidget> {
         },
       );
 
-      // Save to Gallery/Photos
+      // Save to Gallery
       if (widget.item.type == 'video') {
         await Gal.putVideo(tempPath);
       } else if (widget.item.type == 'audio' || widget.item.isAudio) {
-        // Gal handles images and videos. For audio, we might need to save to Download folder
-        // but let's try putVideo (some systems accept it) or just notify user
-        // If it's truly audio, we might just keep it in Downloads
-        await Gal.putVideo(tempPath); // Fallback attempt
+        await Gal.putVideo(tempPath);
       } else {
         await Gal.putImage(tempPath);
       }
@@ -97,20 +101,11 @@ class _DownloadCardWidgetState extends State<DownloadCardWidget> {
       if (mounted) {
         setState(() {
           _isDownloading = false;
+          _isSuccess = true;
           _progress = 1.0;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: AppColors.success,
-            content: Text(
-              'SAVED_TO_GALLERY_SUCCESSFULLY',
-              style: AppTextStyles.mono(size: 10, color: Colors.white),
-            ),
-          ),
-        );
       }
       
-      // Clean up temp file
       final file = File(tempPath);
       if (await file.exists()) await file.delete();
 
@@ -120,10 +115,7 @@ class _DownloadCardWidgetState extends State<DownloadCardWidget> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: AppColors.maroon,
-            content: Text(
-              'DOWNLOAD_ERROR: ${e.toString()}',
-              style: AppTextStyles.mono(size: 10, color: Colors.white),
-            ),
+            content: Text('DOWNLOAD_ERROR: ${e.toString()}'),
           ),
         );
       }
@@ -148,15 +140,19 @@ class _DownloadCardWidgetState extends State<DownloadCardWidget> {
             height: 72,
             decoration: BoxDecoration(
               border: Border.all(
-                color: _isHovered || _isDownloading ? AppColors.accent : AppColors.border,
-                width: 1,
+                color: _isSuccess 
+                    ? AppColors.success 
+                    : (_isHovered || _isDownloading ? AppColors.accent : AppColors.border),
+                width: _isSuccess ? 1.5 : 1,
               ),
-              color: _isHovered ? AppColors.accentDim : Colors.transparent,
+              color: _isSuccess 
+                  ? AppColors.success.withOpacity(0.05) 
+                  : (_isHovered ? AppColors.accentDim : Colors.transparent),
             ),
             child: Stack(
               children: [
                 // Progress Background
-                if (_isDownloading)
+                if (_isDownloading && !_isSuccess)
                   Positioned.fill(
                     child: Align(
                       alignment: Alignment.centerLeft,
@@ -167,11 +163,11 @@ class _DownloadCardWidgetState extends State<DownloadCardWidget> {
                     ),
                   ),
 
-                // Left gold accent bar
+                // Left accent bar
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
-                  width: _isHovered || _isDownloading ? 3 : 0,
-                  color: AppColors.accent,
+                  width: _isHovered || _isDownloading || _isSuccess ? 3 : 0,
+                  color: _isSuccess ? AppColors.success : AppColors.accent,
                 ),
 
                 // Card content
@@ -185,13 +181,17 @@ class _DownloadCardWidgetState extends State<DownloadCardWidget> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              _isDownloading 
-                                  ? 'DOWNLOADING... ${( _progress * 100).toInt()}%'
-                                  : widget.item.quality.toUpperCase(),
+                              _isSuccess 
+                                  ? 'SUCCESS_VERIFIED' 
+                                  : (_isDownloading 
+                                      ? 'DOWNLOADING... ${( _progress * 100).toInt()}%'
+                                      : widget.item.quality.toUpperCase()),
                               style: AppTextStyles.mono(
                                 size: 11,
                                 weight: FontWeight.w700,
-                                color: _isHovered || _isDownloading ? AppColors.accent : AppColors.foreground,
+                                color: _isSuccess 
+                                    ? AppColors.success 
+                                    : (_isHovered || _isDownloading ? AppColors.accent : AppColors.foreground),
                                 letterSpacing: 2,
                               ),
                               maxLines: 1,
@@ -199,10 +199,12 @@ class _DownloadCardWidgetState extends State<DownloadCardWidget> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '${widget.item.extension.toUpperCase()} • SECURED',
+                              _isSuccess 
+                                  ? 'FILE_SAVED_TO_GALLERY'
+                                  : '${widget.item.extension.toUpperCase()} • SECURED',
                               style: AppTextStyles.mono(
                                 size: 8,
-                                opacity: _isHovered || _isDownloading ? 0.6 : 0.4,
+                                color: _isSuccess ? AppColors.success.withOpacity(0.7) : AppColors.foreground.withOpacity(0.4),
                                 letterSpacing: 1.5,
                               ),
                             ),
@@ -211,22 +213,24 @@ class _DownloadCardWidgetState extends State<DownloadCardWidget> {
                       ),
                       AnimatedSwitcher(
                         duration: const Duration(milliseconds: 200),
-                        child: _isDownloading
-                            ? SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  value: _progress,
-                                  strokeWidth: 2,
-                                  color: AppColors.accent,
-                                ),
-                              )
-                            : Icon(
-                                isAudio ? Icons.music_note_rounded : Icons.download_rounded,
-                                key: ValueKey(_isHovered),
-                                color: _isHovered ? AppColors.accent : AppColors.foreground.withOpacity(0.4),
-                                size: 20,
-                              ),
+                        child: _isSuccess
+                            ? const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 22)
+                            : (_isDownloading
+                                ? SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      value: _progress,
+                                      strokeWidth: 2,
+                                      color: AppColors.accent,
+                                    ),
+                                  )
+                                : Icon(
+                                    isAudio ? Icons.music_note_rounded : Icons.download_rounded,
+                                    key: ValueKey(_isHovered),
+                                    color: _isHovered ? AppColors.accent : AppColors.foreground.withOpacity(0.4),
+                                    size: 20,
+                                  )),
                       ),
                     ],
                   ),
