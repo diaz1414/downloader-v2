@@ -3,7 +3,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gal/gal.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/download_result.dart';
 import '../theme/app_theme.dart';
 
@@ -89,11 +91,17 @@ class _DownloadCardWidgetState extends State<DownloadCardWidget> {
         },
       );
 
-      // Save to Gallery
+      // Save to Gallery or Share
       if (widget.item.type == 'video') {
         await Gal.putVideo(tempPath);
       } else if (widget.item.type == 'audio' || widget.item.isAudio) {
-        await Gal.putVideo(tempPath);
+        // Gal does not support audio files. Use share_plus to allow user to "Save to Files"
+        final xFile = XFile(tempPath);
+        await Share.shareXFiles(
+          [xFile], 
+          text: '${widget.item.quality} - ${widget.item.extension.toUpperCase()}',
+          subject: 'Download: ${widget.item.quality}',
+        );
       } else {
         await Gal.putImage(tempPath);
       }
@@ -107,7 +115,14 @@ class _DownloadCardWidgetState extends State<DownloadCardWidget> {
       }
       
       final file = File(tempPath);
-      if (await file.exists()) await file.delete();
+      if (await file.exists()) {
+        // Keep file for a bit so Share can process it if needed, 
+        // but normally Share.shareXFiles handles it.
+        // For safety on some platforms, we wait a tiny bit or just delete after.
+        Future.delayed(const Duration(seconds: 1), () async {
+          if (await file.exists()) await file.delete();
+        });
+      }
 
     } catch (e) {
       if (mounted) {
