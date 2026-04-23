@@ -26,6 +26,116 @@ class _HomeScreenState extends State<HomeScreen> {
     ResultBottomSheet.show(context, result);
   }
 
+  void _showAboutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: AppColors.background,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+        shape: const RoundedRectangleBorder(
+          side: BorderSide(color: AppColors.border, width: 1),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Developer Image
+              Stack(
+                children: [
+                  AspectRatio(
+                    aspectRatio: 1,
+                    child: Image.asset(
+                      'assets/images/developer.jpg',
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: AppColors.cardSurface,
+                        child: const Icon(Icons.person_rounded, size: 60, color: AppColors.border),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 20,
+                    left: 20,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      color: AppColors.accent,
+                      child: Text(
+                        'LEAD_ARCHITECT',
+                        style: AppTextStyles.mono(
+                          size: 9,
+                          weight: FontWeight.w700,
+                          color: AppColors.background,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'DIAW Downloader V2',
+                      style: AppTextStyles.serif(size: 28, height: 1.1),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'NATIVE_MOBILE_PROTOCOL_V2.0',
+                      style: AppTextStyles.mono(size: 8, color: AppColors.accent, letterSpacing: 2),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Sebuah protokol ekstraksi media premium yang dirancang untuk memberikan pengalaman download yang aman, cepat, dan tanpa jejak. Semua logika berjalan langsung dari perangkat Anda.',
+                      style: AppTextStyles.mono(size: 11, opacity: 0.6, height: 1.6),
+                    ),
+                    const SizedBox(height: 32),
+                    Container(height: 1, color: AppColors.border),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'ENCRYPTION: AES-256',
+                          style: AppTextStyles.mono(size: 8, opacity: 0.3),
+                        ),
+                        Text(
+                          'STATUS: OPERATIONAL',
+                          style: AppTextStyles.mono(size: 8, color: AppColors.success),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.accent,
+                          side: const BorderSide(color: AppColors.accent),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                        ),
+                        child: Text(
+                          'TERMINATE_DIALOG',
+                          style: AppTextStyles.mono(size: 10, weight: FontWeight.w700, letterSpacing: 2),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,17 +151,21 @@ class _HomeScreenState extends State<HomeScreen> {
             surfaceTintColor: Colors.transparent,
             title: Row(
               children: [
-                // Gold download icon box — mirrors the logo from Navbar
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  color: AppColors.accent,
-                  child: const Icon(
-                    Icons.download_rounded,
-                    color: AppColors.background,
-                    size: 14,
+                // Real Logo from Assets
+                Image.asset(
+                  'assets/images/logo.png',
+                  height: 28,
+                  errorBuilder: (_, __, ___) => Container(
+                    padding: const EdgeInsets.all(6),
+                    color: AppColors.accent,
+                    child: const Icon(
+                      Icons.download_rounded,
+                      color: AppColors.background,
+                      size: 14,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -67,6 +181,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.info_outline_rounded, size: 20, color: AppColors.foreground),
+                onPressed: () => _showAboutDialog(context),
+              ),
+              const SizedBox(width: 8),
+            ],
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(1),
               child: Container(
@@ -93,7 +214,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // ── Footer ───────────────────────────────────────────────────────
           SliverToBoxAdapter(
-            child: _Footer(),
+            child: _Footer(onAboutTap: () => _showAboutDialog(context)),
           ),
         ],
       ),
@@ -332,7 +453,7 @@ class _TutorialSection extends StatelessWidget {
     _StepData('01', 'Copy URL', 'Salin URL dari TikTok, Instagram, YouTube, atau platform lain'),
     _StepData('02', 'Paste & Fetch', 'Paste di search bar, tekan FETCH STREAM'),
     _StepData('03', 'Pilih Format', 'Pilih kualitas video atau audio yang diinginkan'),
-    _StepData('04', 'Download', 'Tekan tombol download, file tersimpan di browser'),
+    _StepData('04', 'Download', 'Tekan tombol download, file tersimpan di app'),
   ];
 
   @override
@@ -430,29 +551,50 @@ class _StepRow extends StatelessWidget {
 // Footer
 // ─────────────────────────────────────────────────────────────────────────────
 class _Footer extends StatelessWidget {
+  final VoidCallback onAboutTap;
+  const _Footer({required this.onAboutTap});
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(20, 40, 20, 60),
       decoration: const BoxDecoration(
         border: Border(top: BorderSide(color: AppColors.border)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'DIAW DOWNLOADER V2',
-            style: AppTextStyles.serif(size: 22),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'DIAW DOWNLOADER V2',
+                style: AppTextStyles.serif(size: 20),
+              ),
+              IconButton(
+                onPressed: onAboutTap,
+                icon: const Icon(Icons.arrow_outward_rounded, color: AppColors.accent, size: 20),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           Text(
-            'The ultimate tool for high-quality social media\ncontent extraction. Safe, fast, and private.\nNo tracking. No logs.',
-            style: AppTextStyles.mono(size: 9, opacity: 0.4, letterSpacing: 1.2),
+            'The ultimate tool for high-quality social media content extraction. Safe, fast, and private. No tracking. No logs. All processing happens on-device.',
+            style: AppTextStyles.mono(size: 9, opacity: 0.4, height: 1.5, letterSpacing: 1.2),
           ),
-          const SizedBox(height: 24),
-          Text(
-            '© ${DateTime.now().year} DIAW DOWNLOADER V2',
-            style: AppTextStyles.mono(size: 8, opacity: 0.2, letterSpacing: 2),
+          const SizedBox(height: 32),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '© ${DateTime.now().year} DIAW PROTOCOL',
+                style: AppTextStyles.mono(size: 8, opacity: 0.2, letterSpacing: 2),
+              ),
+              Text(
+                'V2.0.0-STABLE',
+                style: AppTextStyles.mono(size: 8, opacity: 0.2, letterSpacing: 2),
+              ),
+            ],
           ),
         ],
       ),

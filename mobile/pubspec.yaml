@@ -10,13 +10,18 @@ dependencies:
   flutter:
     sdk: flutter
   
-  # HTTP
+  # HTTP & Downloads
   http: ^1.2.1
+  dio: ^5.4.3+1
+  
+  # Media Playback
+  video_player: ^2.8.6
+  chewie: ^1.7.5
   
   # Animations
   flutter_animate: ^4.5.0
   
-  # URL Launcher (open download links in browser)
+  # URL Launcher (for fallback)
   url_launcher: ^6.3.0
   
   # Connectivity check (wajib internet)
@@ -29,6 +34,14 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^4.0.0
 
+dependency_overrides:
+  # Memaksa flutter untuk mengabaikan package bermasalah di Windows saat build Android
+  path_provider_foundation: 2.4.0
+  objective_c: 9.3.0
+
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/logo.png
+    - assets/images/developer.jpg
 

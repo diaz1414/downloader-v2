@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../models/download_result.dart';
 import '../theme/app_theme.dart';
 import '../widgets/download_card_widget.dart';
+import '../widgets/video_player_widget.dart';
 
 /// ResultBottomSheet — mirrors ResultSection.tsx from website
 /// Shown as a DraggableScrollableSheet after a successful fetch
@@ -27,6 +28,12 @@ class ResultBottomSheet extends StatelessWidget {
         .toRadixString(36)
         .substring(3)
         .toUpperCase();
+
+    // Use the first video URL for preview if available, otherwise use data.url
+    final previewUrl = data.picker.firstWhere(
+      (item) => item.type == 'video',
+      orElse: () => PickerItem(url: data.url ?? '', type: 'video', quality: 'HD', extension: 'mp4')
+    ).url;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.92,
@@ -118,31 +125,13 @@ class ResultBottomSheet extends StatelessWidget {
                     Container(height: 1, color: AppColors.border.withOpacity(0.3)),
                     const SizedBox(height: 20),
 
-                    // ── Thumbnail Preview ────────────────────────────────────
-                    if (data.thumbnail != null && data.thumbnail!.isNotEmpty) ...[
+                    // ── Media Player Preview ─────────────────────────────────
+                    if (previewUrl.isNotEmpty) ...[
                       Stack(
                         children: [
-                          AspectRatio(
-                            aspectRatio: 16 / 9,
-                            child: Image.network(
-                              data.thumbnail!,
-                              fit: BoxFit.cover,
-                              loadingBuilder: (_, child, progress) {
-                                if (progress == null) return child;
-                                return Container(
-                                  color: AppColors.cardSurface,
-                                  child: const Center(
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 1, color: AppColors.accent),
-                                  ),
-                                );
-                              },
-                              errorBuilder: (_, __, ___) => Container(
-                                color: AppColors.cardSurface,
-                                child: const Icon(Icons.movie_rounded,
-                                    color: AppColors.border, size: 40),
-                              ),
-                            ),
+                          VideoPlayerWidget(
+                            url: previewUrl,
+                            poster: data.thumbnail,
                           ),
                           Positioned(
                             top: 8,
@@ -152,7 +141,7 @@ class ResultBottomSheet extends StatelessWidget {
                                   horizontal: 8, vertical: 4),
                               color: AppColors.background.withOpacity(0.9),
                               child: Text(
-                                'PREVIEW MODE',
+                                'LIVE PREVIEW',
                                 style: AppTextStyles.mono(
                                     size: 7, weight: FontWeight.w700, letterSpacing: 2),
                               ),
