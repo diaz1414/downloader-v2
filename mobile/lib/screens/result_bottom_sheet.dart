@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../models/download_result.dart';
@@ -125,17 +124,20 @@ class ResultBottomSheet extends StatelessWidget {
                         children: [
                           AspectRatio(
                             aspectRatio: 16 / 9,
-                            child: CachedNetworkImage(
-                              imageUrl: data.thumbnail!,
+                            child: Image.network(
+                              data.thumbnail!,
                               fit: BoxFit.cover,
-                              placeholder: (_, __) => Container(
-                                color: AppColors.cardSurface,
-                                child: const Center(
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 1, color: AppColors.accent),
-                                ),
-                              ),
-                              errorWidget: (_, __, ___) => Container(
+                              loadingBuilder: (_, child, progress) {
+                                if (progress == null) return child;
+                                return Container(
+                                  color: AppColors.cardSurface,
+                                  child: const Center(
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 1, color: AppColors.accent),
+                                  ),
+                                );
+                              },
+                              errorBuilder: (_, __, ___) => Container(
                                 color: AppColors.cardSurface,
                                 child: const Icon(Icons.movie_rounded,
                                     color: AppColors.border, size: 40),

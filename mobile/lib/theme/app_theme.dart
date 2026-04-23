@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Design tokens mirrored exactly from globals.css and website theme
 class AppColors {
@@ -32,7 +31,8 @@ class AppTextStyles {
     Color color = AppColors.foreground,
     double height = 1.1,
   }) =>
-      GoogleFonts.fraunces(
+      TextStyle(
+        fontFamily: 'Fraunces',
         fontSize: size,
         fontWeight: weight,
         color: color,
@@ -48,7 +48,8 @@ class AppTextStyles {
     double letterSpacing = 1.5,
     double? opacity,
   }) =>
-      GoogleFonts.jetBrainsMono(
+      TextStyle(
+        fontFamily: 'JetBrainsMono',
         fontSize: size,
         fontWeight: weight,
         color: opacity != null ? color.withOpacity(opacity) : color,
@@ -78,7 +79,8 @@ class AppTheme {
           elevation: 0,
           scrolledUnderElevation: 0,
           centerTitle: false,
-          titleTextStyle: GoogleFonts.fraunces(
+          titleTextStyle: TextStyle(
+            fontFamily: 'Fraunces',
             fontSize: 18,
             fontWeight: FontWeight.w700,
             color: AppColors.foreground,
