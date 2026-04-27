@@ -19,7 +19,7 @@ app = Flask(__name__)
 CORS(app)
 
 # --- CORE DOWNLOAD LOGIC (SAMA PERSIS DENGAN BOT TELEGRAM) ---
-def get_ydl_opts(temp_dir, unique_id, format_type, url):
+def get_ydl_opts(temp_dir, unique_id, format_type, url, is_preview=False):
     filename = os.path.join(temp_dir, f"diaww_dl_{unique_id}_{format_type}")
     
     # LOGIKA STEALTH YOUTUBE: Jangan pakai cookies untuk YouTube agar bisa pakai klien iOS/Android
@@ -46,7 +46,10 @@ def get_ydl_opts(temp_dir, unique_id, format_type, url):
     if os.path.exists(cookies_path) and not is_youtube:
         opts['cookiefile'] = cookies_path
 
-    if format_type == 'mp3':
+    if is_preview:
+        # Saat preview, jangan batasi format agar tidak error
+        opts['format'] = 'best'
+    elif format_type == 'mp3':
         opts.update({
             'format': 'bestaudio/best',
             'postprocessors': [{
@@ -137,7 +140,7 @@ def download():
     try:
         # Panggil fungsi get_ydl_opts agar YouTube lolos verifikasi (mode preview)
         temp_dir = tempfile.gettempdir()
-        ydl_opts, _ = get_ydl_opts(temp_dir, "preview", "mp4", url)
+        ydl_opts, _ = get_ydl_opts(temp_dir, "preview", "mp4", url, is_preview=True)
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)

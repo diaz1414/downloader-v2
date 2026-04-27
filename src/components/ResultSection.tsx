@@ -17,14 +17,8 @@ interface ResultData {
 export function ResultSection({ data }: { data: ResultData | null }) {
   if (!data) return null
 
-  // Ambil preview URL terbaik (Kecuali IG/YT agar tidak memicu eror merging di awal)
-  const isDirectVideo = data.url && !data.url.includes("instagram.com") && !data.url.includes("youtube.com") && !data.url.includes("youtu.be")
-  
-  const videoPreviewUrl = isDirectVideo ? (
-    data.picker?.find(item => item.type === "video" && item.has_audio)?.url 
-    || data.picker?.find(item => item.type === "video")?.url 
-    || (data.status === "stream" ? data.url : null)
-  ) : null
+  // Nonaktifkan video preview untuk keamanan & efisiensi (Selalu tampilkan gambar saja)
+  const videoPreviewUrl = null
 
   return (
     <motion.div
