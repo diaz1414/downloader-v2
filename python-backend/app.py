@@ -5,68 +5,11 @@ import os
 import ssl
 import subprocess
 import sys
-import importlib
 import tempfile
 import uuid
 import shutil
 
-def auto_update():
-    # 1. Update/Install Libraries
-    required_libs = ["yt-dlp", "static-ffmpeg", "requests"]
-    for lib in required_libs:
-        try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", "-U", lib])
-        except: pass
-    
-    importlib.reload(yt_dlp)
-    
-    ffmpeg_exe = None
-    try:
-        # 2. Coba gunakan static-ffmpeg
-        from static_ffmpeg import add_paths
-        add_paths()
-        ffmpeg_exe = shutil.which("ffmpeg")
-        
-        # 3. Jika gagal, cari secara manual di site-packages (Linux standard)
-        if not ffmpeg_exe:
-            import site
-            # Lokasi umum di Pterodactyl/KataBump
-            potential_paths = [
-                os.path.expanduser("~/.local/bin/ffmpeg"),
-                "/home/container/.local/bin/ffmpeg",
-                "/usr/bin/ffmpeg",
-                "/usr/local/bin/ffmpeg"
-            ]
-            
-            # Cari di site-packages
-            user_site = site.getusersitepackages()
-            if user_site:
-                pkg_path = os.path.join(os.path.dirname(user_site), "bin", "ffmpeg")
-                potential_paths.append(pkg_path)
-
-            for p in potential_paths:
-                if os.path.exists(p) and os.access(p, os.X_OK):
-                    ffmpeg_exe = p
-                    break
-        
-        if not ffmpeg_exe:
-            print("--- WARNING: FFmpeg NOT FOUND! ---")
-            try:
-                ffmpeg_exe = subprocess.check_output(["which", "ffmpeg"]).decode().strip()
-            except:
-                ffmpeg_exe = "ffmpeg"
-        
-        # PENTING: Kembalikan PATH FOLDER agar yt-dlp bisa temukan ffprobe juga
-        ffmpeg_dir = os.path.dirname(ffmpeg_exe) if os.path.isabs(ffmpeg_exe) else None
-        
-        print(f"--- LOG: FFmpeg Engine Directory: {ffmpeg_dir or 'System Default'} ---")
-        return ffmpeg_dir
-    except Exception as e:
-        print(f"--- LOG: FFmpeg Critical Error: {e} ---")
-        return None
-
-FFMPEG_PATH = auto_update()
-
+# --- INITIALIZATION ---
 try:
     ssl._create_default_https_context = ssl._create_unverified_context
 except AttributeError:
@@ -75,25 +18,45 @@ except AttributeError:
 app = Flask(__name__)
 CORS(app)
 
-def clean_cookies(path):
-    if os.path.exists(path):
-        try:
-            with open(path, 'rb') as f:
-                content = f.read()
-            new_content = content.replace(b'\r\n', b'\n')
-            with open(path, 'wb') as f:
-                f.write(new_content)
-            print("--- LOG: Cookies Sanitized ---")
-        except Exception as e:
-            print("--- LOG: Cookies Fix Failed ---")
+# --- CORE DOWNLOAD LOGIC (SAMA PERSIS DENGAN BOT TELEGRAM) ---
+def get_ydl_opts(temp_dir, unique_id, format_type):
+    filename = os.path.join(temp_dir, f"diaww_dl_{unique_id}_{format_type}")
+    
+    opts = {
+        'outtmpl': f'{filename}.%(ext)s',
+        'quiet': True,
+        'no_warnings': True,
+        'noplaylist': True,
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'nocheckcertificate': True,
+        'ignoreerrors': False,
+    }
 
+    if format_type == 'mp3':
+        opts.update({
+            'format': 'bestaudio/best',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+        })
+    else:
+        opts.update({
+            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+            'merge_output_format': 'mp4',
+        })
+
+    cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
+    if os.path.exists(cookies_path):
+        opts['cookiefile'] = cookies_path
+        
+    return opts, filename
+
+# --- ROUTES ---
 @app.route('/', methods=['GET'])
 def index():
-    return jsonify({
-        "status": "ready", 
-        "yt_dlp": yt_dlp.version.__version__,
-        "ffmpeg": FFMPEG_PATH
-    })
+    return jsonify({"status": "ready", "engine": "diaww-core-v2"})
 
 @app.route('/api/get', methods=['GET'])
 def get_media():
@@ -105,54 +68,23 @@ def get_media():
     unique_id = str(uuid.uuid4())[:8]
     
     try:
-        cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
-        clean_cookies(cookies_path)
+        # URL Cleaning (Identik Bot Tele)
+        clean_url = url
+        if "youtube.com" in url or "youtu.be" in url:
+            clean_url = url.split('&list=')[0].split('?list=')[0].split('&si=')[0].split('?si=')[0].split('&start_radio=')[0]
+        elif "tiktok.com" in url:
+            clean_url = url.split('?')[0]
 
-        # LOGIKA SAMA PERSIS DENGAN BOT TELEGRAM
-        filename = os.path.join(temp_dir, f"diaww_dl_{unique_id}_{format_type}")
-        ydl_opts = {
-            'outtmpl': f'{filename}.%(ext)s',
-            'quiet': True,
-            'no_warnings': True,
-            'noplaylist': True,
-            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-            'nocheckcertificate': True,
-        }
-
-        if format_type == 'mp3':
-            ydl_opts.update({
-                'format': 'bestaudio/best',
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }],
-            })
-        else:
-            ydl_opts.update({
-                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-                'merge_output_format': 'mp4',
-            })
-
-        if FFMPEG_PATH: ydl_opts['ffmpeg_location'] = FFMPEG_PATH
-        if os.path.exists(cookies_path): ydl_opts['cookiefile'] = cookies_path
+        ydl_opts, base_filename = get_ydl_opts(temp_dir, unique_id, format_type)
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            print(f"--- LOG: Processing {url} as {format_type} ---")
-            
-            # URL Cleaning (Sesuai Bot Tele)
-            clean_url = url
-            if "youtube.com" in url or "youtu.be" in url:
-                clean_url = url.split('&list=')[0].split('?list=')[0].split('&si=')[0].split('?si=')[0].split('&start_radio=')[0]
-            elif "tiktok.com" in url:
-                clean_url = url.split('?')[0]
-
+            print(f"--- LOG: Downloading {clean_url} as {format_type} ---")
             info = ydl.extract_info(clean_url, download=True)
             actual_filename = ydl.prepare_filename(info)
-            
-            # Ekstensi Correction (Sesuai Bot Tele)
+
+            # Extension Correction
             if format_type == 'mp3':
-                actual_filename = f"{filename}.mp3"
+                actual_filename = f"{base_filename}.mp3"
             
             if not os.path.exists(actual_filename):
                 base_path = os.path.splitext(actual_filename)[0]
@@ -189,22 +121,8 @@ def download():
     if not url: return jsonify({"status": "error", "message": "URL is required"}), 400
 
     try:
-        cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
-        clean_cookies(cookies_path)
-        
-        ydl_opts = {
-            'quiet': True,
-            'no_warnings': True,
-            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-            'nocheckcertificate': True,
-            'ignoreerrors': True,
-            'no_playlist': True,
-            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        }
-
-        if os.path.exists(cookies_path): ydl_opts['cookiefile'] = cookies_path
-
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        # Minimal info fetch
+        with yt_dlp.YoutubeDL({'quiet': True, 'noplaylist': True}) as ydl:
             info = ydl.extract_info(url, download=False)
             
             picker = [
@@ -231,7 +149,7 @@ def download():
                 "url": f"/python-api/api/get?url={url}&format=mp4",
                 "title": info.get('title', 'Media Content'),
                 "thumbnail": info.get('thumbnail', ''),
-                "source": "Python Premium Engine (Auto-Merge)",
+                "source": "Diaww Downloader Core",
                 "picker": picker
             })
     except Exception as e:
