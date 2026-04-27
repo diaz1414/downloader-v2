@@ -5,7 +5,6 @@ import os
 import ssl
 import subprocess
 import sys
-
 import importlib
 
 # Fungsi Auto-Update yt-dlp saat startup (untuk hosting tanpa terminal)
@@ -20,7 +19,7 @@ def auto_update():
 
 auto_update()
 
-# Matikan verifikasi SSL secara global untuk mengatasi error [SSL: CERTIFICATE_VERIFY_FAILED]
+# Matikan verifikasi SSL secara global
 try:
     ssl._create_default_https_context = ssl._create_unverified_context
 except AttributeError:
@@ -29,12 +28,11 @@ except AttributeError:
 app = Flask(__name__)
 CORS(app)
 
-# Tampilkan versi yt-dlp saat startup untuk debugging
 print(f"DEBUG: Current yt-dlp version: {yt_dlp.version.__version__}")
 
 @app.route('/', methods=['GET'])
 def index():
-    return jsonify({"status": "ready", "message": "DIAW Downloader Python Backend is Running"})
+    return jsonify({"status": "ready", "version": yt_dlp.version.__version__})
 
 @app.route('/api/download', methods=['POST'])
 def download():
@@ -45,86 +43,86 @@ def download():
         return jsonify({"status": "error", "message": "URL is required"}), 400
 
     try:
-        # Tentukan path file cookies
         cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
         
-        # Konfigurasi ULTRA BYPASS
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
-            'format': 'bestvideo+bestaudio/best',
+            'format': 'best',
             'nocheckcertificate': True,
             'ignoreerrors': False,
             'no_playlist': True,
-            'wait_for_video': 5,
-            # Penyamaran Header yang lebih lengkap
             'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                 'Accept-Language': 'en-US,en;q=0.9',
-                'Referer': 'https://www.youtube.com/',
-            },
-            # Spoofing client yang lebih beragam (Android, iOS, dan YouTube Music)
-            # Spoofing client TV & Web Creator (Paling ampuh saat ini)
-            'extractor_args': {
-                'youtube': {
-                    'player_client': ['tv', 'web_creator'],
-                    'player_skip': ['webpage', 'configs'],
-                }
+                'Referer': 'https://www.google.com/',
             }
         }
 
-        # Jika file cookies.txt ada, gunakan untuk bypass
         if os.path.exists(cookies_path):
-            print(f"Using cookies from: {cookies_path}")
             ydl_opts['cookiefile'] = cookies_path
-        else:
-            print("No cookies.txt found, using guest mode.")
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # Menggunakan process_ie untuk ekstraksi yang lebih mendalam
+            # Ekstraksi informasi
             info = ydl.extract_info(url, download=False)
             
+            # Ambil semua format yang tersedia
             formats = info.get('formats', [])
             picker = []
             
-            # Link utama
-            video_url = info.get('url') or (formats[-1].get('url') if formats else None)
+            # Link utama (cari yang terbaik)
+            video_url = info.get('url')
             
             for f in formats:
-                if f.get('url') and (f.get('vcodec') != 'none' or f.get('acodec') != 'none'):
-                    ext = f.get('ext', 'mp4')
-                    res = f.get('resolution') or f.get('format_note') or "HD"
+                f_url = f.get('url')
+                if f_url and 'http' in f_url:
+                    vcodec = f.get('vcodec', 'none')
+                    acodec = f.get('acodec', 'none')
                     
-                    if 'http' in f.get('url'):
-                        picker.append({
-                            "url": f.get('url'),
-                            "quality": f"{res}".strip(),
-                            "extension": ext,
-                            "type": "video" if f.get('vcodec') != 'none' else "audio"
-                        })
+                    # Tentukan tipe
+                    if vcodec != 'none':
+                        m_type = "video"
+                    elif acodec != 'none':
+                        m_type = "audio"
+                    else:
+                        continue
+                        
+                    res = f.get('resolution') or f.get('format_note') or f.get('height') or "HD"
+                    ext = f.get('ext', 'mp4')
+                    
+                    picker.append({
+                        "url": f_url,
+                        "quality": str(res),
+                        "extension": ext,
+                        "type": m_type
+                    })
 
-            # Sortir picker agar video ada di atas
-            picker.sort(key=lambda x: x['type'], reverse=True)
+            # Jika picker kosong tapi ada info url, tambahkan manual
+            if not picker and video_url:
+                picker.append({
+                    "url": video_url,
+                    "quality": "Default",
+                    "extension": info.get('ext', 'mp4'),
+                    "type": "video"
+                })
 
             return jsonify({
                 "status": "stream",
                 "url": video_url,
                 "title": info.get('title', 'Media Content'),
                 "thumbnail": info.get('thumbnail', ''),
-                "source": "Python Ultra-Bypass Engine",
-                "picker": picker[:20]
+                "source": "Python 2026 Engine",
+                "picker": picker[:15]
             })
 
     except Exception as e:
-        print(f"Error: {str(e)}")
-        # Berikan pesan error yang lebih jelas ke frontend
+        print(f"Error Log: {str(e)}")
         return jsonify({
             "status": "error", 
-            "message": f"YouTube memblokir server ini. Solusi: Update yt-dlp atau gunakan cookies. ({str(e)})"
+            "message": f"Gagal: {str(e)}"
         }), 500
 
 if __name__ == '__main__':
-    # Pastikan port sesuai dengan hostingan kamu
     port = int(os.environ.get('PORT', 20212))
     app.run(host='0.0.0.0', port=port)
