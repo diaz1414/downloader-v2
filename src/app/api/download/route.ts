@@ -63,19 +63,24 @@ export async function POST(req: Request) {
       "Referer": "https://ryzumi.net/",
     };
 
+    // Flag untuk memastikan kita tidak memanggil proxy lebih dari sekali (Cegah Error 423)
+    let proxyUsed = false;
+
     // Helper internal untuk Ryzumi dengan fallback proxy
     async function fetchRyzumi(apiUrl: string) {
       // 1. Coba tembak langsung (Cepat)
       try {
-        const res = await fetchWithTimeout(apiUrl, { headers: baseHeaders });
-        if (res.status === 403 || res.status === 429) {
-          throw new Error("Blocked by API");
-        }
+        const res = await fetchWithTimeout(apiUrl, { headers: baseHeaders, timeout: 5000 });
+        if (res.status === 403 || res.status === 429) throw new Error("Blocked");
         return res;
       } catch (err) {
-        // 2. Jika diblokir, tembak lewat proxy (Lambat tapi Berhasil)
-        console.warn(`[RETRY] API Blocked, using proxy for: ${apiUrl}`);
-        return await fetchWithAnt(apiUrl, { headers: baseHeaders });
+        // 2. Jika diblokir DAN belum pernah pakai proxy, tembak lewat proxy
+        if (!proxyUsed) {
+          console.warn(`[RETRY] API Blocked, using proxy for: ${apiUrl}`);
+          proxyUsed = true;
+          return await fetchWithAnt(apiUrl, { headers: baseHeaders, timeout: 8000 });
+        }
+        throw new Error("Proxy already used or blocked");
       }
     }
 
@@ -188,22 +193,25 @@ export async function POST(req: Request) {
       } catch (err) { console.warn("YouTube Failed"); }
     }
 
-    // 4. UNIVERSAL FALLBACK
+    // 4. UNIVERSAL FALLBACK (Hanya jika belum dapat hasil)
     try {
-      const ryzumiRes = await fetchRyzumi(`https://api.ryzumi.net/api/downloader/all-in-one?url=${encodeURIComponent(url)}`);
-      if (ryzumiRes.ok) {
-        const data = await ryzumiRes.json();
-        if (data && data.medias && data.medias.length > 0) {
-          return NextResponse.json({
-            status: "stream",
-            url: data.medias[0].url,
-            title: data.title || "Archive Result",
-            thumbnail: data.thumbnail,
-            source: "Universal Protocol",
-            picker: data.medias.map((m: any) => ({
-              url: m.url, type: m.type || "video", quality: m.quality || "HD", extension: m.extension || "mp4"
-            }))
-          });
+      // Hanya jalankan fallback jika belum mencoba proxy (untuk hemat waktu/limit)
+      if (!proxyUsed) {
+        const ryzumiRes = await fetchRyzumi(`https://api.ryzumi.net/api/downloader/all-in-one?url=${encodeURIComponent(url)}`);
+        if (ryzumiRes && ryzumiRes.ok) {
+          const data = await ryzumiRes.json();
+          if (data && data.medias && data.medias.length > 0) {
+            return NextResponse.json({
+              status: "stream",
+              url: data.medias[0].url,
+              title: data.title || "Archive Result",
+              thumbnail: data.thumbnail,
+              source: "Universal Protocol",
+              picker: data.medias.map((m: any) => ({
+                url: m.url, type: m.type || "video", quality: m.quality || "HD", extension: m.extension || "mp4"
+              }))
+            });
+          }
         }
       }
     } catch (err: any) { console.error("[FALLBACK_ERROR]", err.message); }
