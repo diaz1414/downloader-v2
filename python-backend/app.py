@@ -3,6 +3,19 @@ from flask_cors import CORS
 import yt_dlp
 import os
 import ssl
+import subprocess
+import sys
+
+# Fungsi Auto-Update yt-dlp saat startup (untuk hosting tanpa terminal)
+def auto_update():
+    try:
+        print("Checking for yt-dlp updates...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "-U", "yt-dlp"])
+        print("yt-dlp updated successfully!")
+    except Exception as e:
+        print(f"Auto-update failed: {e}")
+
+auto_update()
 
 # Matikan verifikasi SSL secara global untuk mengatasi error [SSL: CERTIFICATE_VERIFY_FAILED]
 try:
