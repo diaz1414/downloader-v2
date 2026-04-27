@@ -40,7 +40,7 @@ def get_ydl_opts(temp_dir, unique_id, format_type, url, is_preview=False):
                 'visitor_data': 'CgtMaGpjd0szVDhXQSjKxrzPBjIKCgJJRBIEGgAgVWLfAgrcAjE4LllUPVVWa3RvX1J2U0NIdGFhbmNfOGlJZGlYNklERjFKUHl0bTB4MW1yWWh1eGZQc1hVaHV3NGh6UzNKN3ZnYzRocTNTVnFtOXZ4OGlaUHlJMF9ST2dubk9PdU8yTFhoM1dFa1ZzU2VSbkRNVWNYY214WUFERUZJem94Q1o4c0c1eHlmWEhaRjNVYVUtU3RJNkYzTERFc0dVeEN4Tlp6VVppSXIzV1U4NUNzQTZtSzVwYUNCZ3ZtMk9CYjhEaXhMdk9xNDNLc3VwclpaY1E4eWY1WnJhRzAzbExzQVd0cTRwdVBWbTRHbVRJM05za0NwNXd5Z1cwOXhNMmtZZXFEc09wUkdQbElURUx0d093Mzk2VVM2eDhrQW15RVBDd0FrSTVXTHFxbDZyczRieFlELXdHbDFCVVhPd1Y2bEs0TkZpMENHVEVaQU8tZnR5RzZWeVh4bm5aVGItQQ=='
             }
         },
-        'impersonate': 'chrome', # Menyamar jadi Chrome asli
+        'impersonate': 'chrome', # Aktifkan kembali penyamaran Chrome
         'check_formats': False,
         'ignore_no_formats_error': True
     }
