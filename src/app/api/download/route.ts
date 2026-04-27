@@ -33,7 +33,8 @@ export async function POST(req: Request) {
 
     // --- PRIORITAS 1: PYTHON BACKEND (yt-dlp) ---
     try {
-      const pythonRes = await fetchWithTimeout(PYTHON_API, {
+      // Gunakan jalur rewrite Vercel (HTTPS)
+      const pythonRes = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_BASE_URL || "https://downloaderv2.diaww.my.id"}/python-api/api/download`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
