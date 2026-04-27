@@ -7,6 +7,7 @@ import { Play, Pause, SkipForward, SkipBack, Volume2, X, Radio } from "lucide-re
 const TRACKS = [
   { id: 1, title: "Old Songs", artist: "LoFi Remix", url: "/music/old%20song%201.mp3" },
   { id: 2, title: "Old Songs 2", artist: "LoFi Remix", url: "/music/old%20song%202.mp3" },
+  { id: 3, title: "everything u are", artist: "Hindia", url: "/music/hindia.mp3" },
 ]
 
 export default function MusicPlayer() {
@@ -18,7 +19,7 @@ export default function MusicPlayer() {
 
   // State untuk bar visualizer (10 bar agar lebih lebar dan bertenaga)
   const [vuLevel, setVuLevel] = useState<number[]>(new Array(10).fill(10))
-  
+
   const audioContextRef = useRef<AudioContext | null>(null)
   const analyserRef = useRef<AnalyserNode | null>(null)
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null)
@@ -32,19 +33,19 @@ export default function MusicPlayer() {
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
       const ctx = new AudioContextClass()
       const analyser = ctx.createAnalyser()
-      
+
       const source = ctx.createMediaElementSource(audioRef.current)
       source.connect(analyser)
       analyser.connect(ctx.destination)
-      
-      analyser.fftSize = 256 
-      analyser.smoothingTimeConstant = 0.4 
-      
+
+      analyser.fftSize = 256
+      analyser.smoothingTimeConstant = 0.4
+
       audioContextRef.current = ctx
       analyserRef.current = analyser
       sourceRef.current = source
     }
-    
+
     if (audioContextRef.current?.state === 'suspended') {
       audioContextRef.current.resume()
     }
@@ -55,26 +56,26 @@ export default function MusicPlayer() {
     if (analyserRef.current && isPlaying) {
       const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount)
       analyserRef.current.getByteFrequencyData(dataArray)
-      
+
       const newLevels = new Array(10).fill(0)
       const binCount = analyserRef.current.frequencyBinCount
-      
+
       // Kita bagi 5 zona frekuensi, lalu di-mirror (kiri-kanan)
       for (let i = 0; i < 5; i++) {
         const index = Math.floor(Math.pow(i / 4, 2) * (binCount * 0.4))
         const value = dataArray[index] || 0
-        
-        let multiplier = 1.8 - (i * 0.1) 
+
+        let multiplier = 1.8 - (i * 0.1)
         if (i > 2) multiplier = 3.8 // Boost pinggir lebih kuat
-        
+
         const level = Math.min(100, (value / 255) * 100 * multiplier)
         const finalVal = Math.max(15, level + (Math.random() * 5))
-        
+
         // Simetris: i=0 ke tengah (4,5), i=1 ke (3,6), dst
-        newLevels[4 - i] = finalVal 
-        newLevels[5 + i] = finalVal 
+        newLevels[4 - i] = finalVal
+        newLevels[5 + i] = finalVal
       }
-      
+
       setVuLevel(newLevels)
       animationRef.current = requestAnimationFrame(updateVisualizer)
     }
@@ -152,14 +153,14 @@ export default function MusicPlayer() {
             <div className="relative mb-6 flex h-24 items-end justify-center gap-[3px] rounded-lg bg-zinc-950 p-3 shadow-inner border border-hindia-gold/5 overflow-hidden">
               {/* Scanline/Grid Effect */}
               <div className="absolute inset-0 z-10 pointer-events-none opacity-10 bg-[linear-gradient(rgba(212,175,55,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(212,175,55,0.1)_1px,transparent_1px)] bg-[size:4px_4px]" />
-              
+
               {vuLevel.map((level, i) => (
                 <motion.div
                   key={i}
                   className="w-full bg-gradient-to-t from-hindia-maroon via-hindia-gold to-white rounded-t-sm"
-                  animate={{ 
+                  animate={{
                     height: `${level}%`,
-                    boxShadow: level > 40 ? `0 0 15px rgba(212, 175, 55, ${level/120})` : "none",
+                    boxShadow: level > 40 ? `0 0 15px rgba(212, 175, 55, ${level / 120})` : "none",
                     filter: level > 70 ? "brightness(1.2)" : "brightness(1)"
                   }}
                   transition={{ type: "tween", ease: "linear", duration: 0.1 }}
@@ -169,7 +170,7 @@ export default function MusicPlayer() {
 
             {/* Track Info Panel */}
             <div className="mb-6 space-y-1">
-              <motion.h3 
+              <motion.h3
                 className="truncate font-serif text-xl font-bold text-hindia-gold text-center"
                 animate={isPlaying ? { opacity: [0.8, 1, 0.8] } : {}}
                 transition={{ duration: 2, repeat: Infinity }}
