@@ -62,19 +62,33 @@ def proxy():
             # Instagram TIDAK BOLEH pakai Referer TikTok, dan lebih baik tanpa Referer sama sekali
             headers.pop('Referer', None)
 
-        # Matikan verifikasi SSL jika perlu untuk menghindari "Bad URL Hash" karena cert issue
-        req = requests.get(target_url, headers=headers, stream=True, timeout=30, verify=False)
+        # Alirkan (stream) kontennya agar hemat RAM
+        req = requests.get(target_url, headers=headers, stream=True, timeout=60, verify=False)
         
         def generate():
-            for chunk in req.iter_content(chunk_size=1024 * 32): # Buffer lebih besar (32KB)
+            for chunk in req.iter_content(chunk_size=1024 * 64): # 64KB buffer
                 yield chunk
         
-        # Copy header penting dari response asli (seperti Content-Type dan Content-Length)
-        excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
-        resp_headers = [(name, value) for (name, value) in req.raw.headers.items()
-                       if name.lower() not in excluded_headers]
+        # Ambil Content-Type asli atau default ke video/mp4
+        ctype = req.headers.get('content-type', 'video/mp4')
         
-        return Response(generate(), headers=resp_headers, content_type=req.headers.get('content-type'))
+        # Buat nama file agar tidak kedownload sebagai .txt
+        filename = "video_download.mp4"
+        if "audio" in ctype:
+            filename = "audio_download.mp3"
+
+        # Kirim response dengan header download yang benar
+        headers_to_send = {
+            'Content-Type': ctype,
+            'Content-Disposition': f'attachment; filename="{filename}"',
+            'Access-Control-Allow-Origin': '*'
+        }
+
+        # Tambahkan Content-Length jika tersedia
+        if req.headers.get('content-length'):
+            headers_to_send['Content-Length'] = req.headers.get('content-length')
+            
+        return Response(generate(), headers=headers_to_send)
     except Exception as e:
         print(f"Proxy Error: {e}")
         return str(e), 500
