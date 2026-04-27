@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server";
 
-// Menggunakan runtime standard (bukan edge) agar bisa memanggil alamat IP langsung
-// export const runtime = "edge"; 
-
-// URL Backend Python kamu
-const PYTHON_API = "http://51.68.34.78:20212/api/download";
+// URL Backend Python kamu (lewat jalur HTTPS Vercel Rewrite)
+const PYTHON_API_URL = "https://downloaderv2.diaww.my.id/python-api/api/download";
 
 async function fetchWithTimeout(url: string, options: any = {}) {
-  const { timeout = 15000 } = options;
+  const { timeout = 25000 } = options; // Timeout lebih lama untuk yt-dlp
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   try {
@@ -26,95 +23,44 @@ export async function POST(req: Request) {
     let { url } = body;
 
     if (!url) {
-      return NextResponse.json({ status: "error", text: "URL is required" }, { status: 400 });
+      return NextResponse.json({ status: "error", message: "URL is required" }, { status: 400 });
     }
 
-    console.log(`[PROCESS] Target: ${url} (Routing to Python Backend)`);
+    console.log(`[PROCESS] Target: ${url} (Routing to Private Python Backend)`);
 
-    // --- PRIORITAS 1: PYTHON BACKEND (yt-dlp) ---
     try {
-      // Gunakan jalur rewrite Vercel (HTTPS)
-      const pythonRes = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_BASE_URL || "https://downloaderv2.diaww.my.id"}/python-api/api/download`, {
+      const pythonRes = await fetchWithTimeout(PYTHON_API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
-        timeout: 12000
       });
-
-      console.log(`[PYTHON_STATUS] ${pythonRes.status} ${pythonRes.statusText}`);
 
       if (pythonRes.ok) {
         const data = await pythonRes.json();
-        console.log(`[PYTHON_DATA]`, data);
+        console.log(`[PYTHON_SUCCESS]`, data.title);
+        
         if (data.status === "stream") {
-          return NextResponse.json({
-            ...data,
-            source: "Python Private Engine (Stable)"
-          });
+          return NextResponse.json(data);
         }
       } else {
         const errText = await pythonRes.text();
-        console.error(`[PYTHON_ERROR_BODY]`, errText);
+        console.error(`[PYTHON_ERROR]`, errText);
       }
     } catch (err: any) {
-      console.warn("[PYTHON_BACKEND_FAILED]", err.message);
+      console.error("[PYTHON_FAILED]", err.message);
+      return NextResponse.json({ 
+        status: "error", 
+        message: "Server download sedang sibuk atau down. Silakan coba lagi nanti." 
+      }, { status: 500 });
     }
 
-    // --- PRIORITAS 2: TIKTOK FALLBACK (Direct) ---
-    if (url.includes("tiktok.com")) {
-      try {
-        const twmRes = await fetchWithTimeout(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`);
-        const twmData = await twmRes.json();
-        if (twmData?.data) {
-          const d = twmData.data;
-          return NextResponse.json({
-            status: "stream",
-            url: d.play,
-            title: d.title || "TikTok Video",
-            thumbnail: d.cover,
-            source: "TikTok Protocol (Fallback)",
-            picker: [
-              { url: d.play, type: "video", quality: "HD (NO-WM)", extension: "mp4" },
-              { url: d.music, type: "audio", quality: "AUDIO", extension: "mp3" }
-            ]
-          });
-        }
-      } catch (e) {
-        console.warn("TikTok Fallback Failed");
-      }
-    }
-
-    // --- PRIORITAS 3: INSTAGRAM FALLBACK (Chocomilk) ---
-    if (url.includes("instagram.com")) {
-      try {
-        const cocoRes = await fetchWithTimeout(`https://chocomilk.amira.us.kg/v1/download/instagram?url=${encodeURIComponent(url)}`);
-        if (cocoRes.ok) {
-          const d = await cocoRes.json();
-          const data = d.data || d.result || d;
-          const mediaUrl = data.url || (Array.isArray(data) ? data[0]?.url : null);
-          if (mediaUrl) {
-            return NextResponse.json({
-              status: "stream",
-              url: mediaUrl,
-              title: data.title || "Instagram Content",
-              thumbnail: data.thumbnail || "",
-              source: "Instagram Protocol (Fallback)",
-              picker: [{ url: mediaUrl, type: "video", quality: "HD", extension: "mp4" }]
-            });
-          }
-        }
-      } catch (e) {
-        console.warn("Instagram Fallback Failed");
-      }
-    }
-
-    return NextResponse.json({
-      status: "error",
-      text: "Maaf, semua protokol gagal. Pastikan Backend Python sudah berjalan atau link valid."
-    }, { status: 200 });
+    return NextResponse.json({ 
+      status: "error", 
+      message: "Gagal mengekstrak video. Pastikan link benar." 
+    }, { status: 404 });
 
   } catch (error: any) {
-    console.error("[CRITICAL_ERROR]", error);
-    return NextResponse.json({ status: "error", text: "Terjadi kesalahan internal." }, { status: 500 });
+    console.error("API_ERROR:", error);
+    return NextResponse.json({ status: "error", message: error.message }, { status: 500 });
   }
 }
