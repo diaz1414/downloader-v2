@@ -30,6 +30,12 @@ def get_ydl_opts(temp_dir, unique_id, format_type):
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         'nocheckcertificate': True,
         'ignoreerrors': False,
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['ios', 'mweb', 'tv', 'android'],
+                'skip': ['dash', 'hls']
+            }
+        }
     }
 
     if format_type == 'mp3':
@@ -121,8 +127,17 @@ def download():
     if not url: return jsonify({"status": "error", "message": "URL is required"}), 400
 
     try:
-        # Gunakan cookies juga di sini agar tidak diblokir Instagram
-        ydl_opts = {'quiet': True, 'noplaylist': True}
+        # Gunakan cookies & player client agar tidak diblokir YouTube/IG
+        ydl_opts = {
+            'quiet': True, 
+            'noplaylist': True,
+            'nocheckcertificate': True,
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['ios', 'mweb', 'tv', 'android']
+                }
+            }
+        }
         cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
         if os.path.exists(cookies_path):
             ydl_opts['cookiefile'] = cookies_path
