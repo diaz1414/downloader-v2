@@ -36,17 +36,23 @@ export async function POST(req: Request) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
-        timeout: 12000 // Beri waktu lebih lama untuk yt-dlp memproses
+        timeout: 12000
       });
+
+      console.log(`[PYTHON_STATUS] ${pythonRes.status} ${pythonRes.statusText}`);
 
       if (pythonRes.ok) {
         const data = await pythonRes.json();
+        console.log(`[PYTHON_DATA]`, data);
         if (data.status === "stream") {
           return NextResponse.json({
             ...data,
             source: "Python Private Engine (Stable)"
           });
         }
+      } else {
+        const errText = await pythonRes.text();
+        console.error(`[PYTHON_ERROR_BODY]`, errText);
       }
     } catch (err: any) {
       console.warn("[PYTHON_BACKEND_FAILED]", err.message);
@@ -71,7 +77,9 @@ export async function POST(req: Request) {
             ]
           });
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn("TikTok Fallback Failed");
+      }
     }
 
     // --- PRIORITAS 3: INSTAGRAM FALLBACK (Chocomilk) ---
@@ -93,7 +101,9 @@ export async function POST(req: Request) {
             });
           }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn("Instagram Fallback Failed");
+      }
     }
 
     return NextResponse.json({
