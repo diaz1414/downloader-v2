@@ -11,34 +11,56 @@ import uuid
 import shutil
 
 def auto_update():
-    # Pastikan library terbaru terinstall
+    # 1. Update/Install Libraries
     required_libs = ["yt-dlp", "static-ffmpeg", "requests"]
     for lib in required_libs:
         try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "-U", lib])
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", "-U", lib])
         except: pass
     
     importlib.reload(yt_dlp)
     
+    ffmpeg_exe = None
     try:
+        # 2. Coba gunakan static-ffmpeg
         from static_ffmpeg import add_paths
-        add_paths() 
-        
+        add_paths()
         ffmpeg_exe = shutil.which("ffmpeg")
         
-        # Jika masih tidak ketemu, coba cari di folder lokal site-packages
+        # 3. Jika gagal, cari secara manual di site-packages (Linux standard)
         if not ffmpeg_exe:
             import site
-            user_base = site.getuserbase()
-            # Standar lokasi static-ffmpeg di Linux
-            potential = os.path.join(user_base, "bin", "ffmpeg")
-            if os.path.exists(potential):
-                ffmpeg_exe = potential
+            # Lokasi umum di Pterodactyl/KataBump
+            potential_paths = [
+                os.path.expanduser("~/.local/bin/ffmpeg"),
+                "/home/container/.local/bin/ffmpeg",
+                "/usr/bin/ffmpeg",
+                "/usr/local/bin/ffmpeg"
+            ]
+            
+            # Cari di site-packages
+            user_site = site.getusersitepackages()
+            if user_site:
+                pkg_path = os.path.join(os.path.dirname(user_site), "bin", "ffmpeg")
+                potential_paths.append(pkg_path)
+
+            for p in potential_paths:
+                if os.path.exists(p) and os.access(p, os.X_OK):
+                    ffmpeg_exe = p
+                    break
         
-        print(f"--- LOG: FFmpeg Path Verified: {ffmpeg_exe} ---")
+        if not ffmpeg_exe:
+            print("--- WARNING: FFmpeg NOT FOUND! ---")
+            # Usaha terakhir: panggil via shell untuk cari lokasinya
+            try:
+                ffmpeg_exe = subprocess.check_output(["which", "ffmpeg"]).decode().strip()
+            except:
+                ffmpeg_exe = "ffmpeg" # Terpaksa pakai default
+        
+        print(f"--- LOG: FFmpeg Engine Ready at: {ffmpeg_exe} ---")
         return ffmpeg_exe
     except Exception as e:
-        print(f"--- LOG: FFmpeg Search Error: {e} ---")
+        print(f"--- LOG: FFmpeg Critical Error: {e} ---")
         return "ffmpeg"
 
 FFMPEG_PATH = auto_update()
