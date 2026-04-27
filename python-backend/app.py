@@ -19,8 +19,11 @@ app = Flask(__name__)
 CORS(app)
 
 # --- CORE DOWNLOAD LOGIC (SAMA PERSIS DENGAN BOT TELEGRAM) ---
-def get_ydl_opts(temp_dir, unique_id, format_type):
+def get_ydl_opts(temp_dir, unique_id, format_type, url):
     filename = os.path.join(temp_dir, f"diaww_dl_{unique_id}_{format_type}")
+    
+    # LOGIKA STEALTH YOUTUBE: Jangan pakai cookies untuk YouTube agar bisa pakai klien iOS/Android
+    is_youtube = "youtube.com" in url or "youtu.be" in url
     
     opts = {
         'outtmpl': f'{filename}.%(ext)s',
@@ -32,11 +35,14 @@ def get_ydl_opts(temp_dir, unique_id, format_type):
         'ignoreerrors': False,
         'extractor_args': {
             'youtube': {
-                'player_client': ['ios', 'mweb', 'tv', 'android'],
-                'skip': ['dash', 'hls']
+                'player_client': ['tv', 'web_embedded', 'ios', 'android'],
             }
         }
     }
+
+    cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
+    if os.path.exists(cookies_path) and not is_youtube:
+        opts['cookiefile'] = cookies_path
 
     if format_type == 'mp3':
         opts.update({
@@ -81,7 +87,7 @@ def get_media():
         elif "tiktok.com" in url:
             clean_url = url.split('?')[0]
 
-        ydl_opts, base_filename = get_ydl_opts(temp_dir, unique_id, format_type)
+        ydl_opts, base_filename = get_ydl_opts(temp_dir, unique_id, format_type, clean_url)
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             print(f"--- LOG: Downloading {clean_url} as {format_type} ---")
@@ -127,20 +133,6 @@ def download():
     if not url: return jsonify({"status": "error", "message": "URL is required"}), 400
 
     try:
-        # Gunakan cookies & player client agar tidak diblokir YouTube/IG
-        ydl_opts = {
-            'quiet': True, 
-            'noplaylist': True,
-            'nocheckcertificate': True,
-            'extractor_args': {
-                'youtube': {
-                    'player_client': ['ios', 'mweb', 'tv', 'android']
-                }
-            }
-        }
-        cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
-        if os.path.exists(cookies_path):
-            ydl_opts['cookiefile'] = cookies_path
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
