@@ -13,9 +13,8 @@ async function fetchWithAnt(url: string, options: any = {}) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
 
-  // OPTIMASI: Tambah proxy_type=datacenter supaya ScrapingAnt dapet IP lebih cepet 
-  // dibanding IP Residential yang lemot banget.
-  const proxyUrl = `https://api.scrapingant.com/v2/general?url=${encodeURIComponent(url)}&x-api-key=${ANT_API_KEY}&browser=false&proxy_type=datacenter`;
+  // OPTIMASI: Gunakan residential proxy agar lebih sulit diblokir oleh target
+  const proxyUrl = `https://api.scrapingant.com/v2/general?url=${encodeURIComponent(url)}&x-api-key=${ANT_API_KEY}&browser=false&proxy_type=residential`;
 
   try {
     const response = await fetch(proxyUrl, {
@@ -61,7 +60,7 @@ export async function POST(req: Request) {
     const baseHeaders = {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
       "Accept": "application/json",
-      "Referer": "https://downloaderv2.diaww.my.id/",
+      "Referer": "https://ryzumi.net/",
     };
 
     // Helper internal untuk Ryzumi dengan fallback proxy
@@ -154,18 +153,17 @@ export async function POST(req: Request) {
     // 3. YOUTUBE PRIORITY
     if (isYoutube) {
       try {
-        // Optimasi: Panggil dengan sistem fallback (Direct first, then Proxy)
-        const [mp4Res, mp3Res] = await Promise.allSettled([
-          fetchRyzumi(`https://api.ryzumi.net/api/downloader/ytmp4?url=${encodeURIComponent(url)}`),
-          fetchRyzumi(`https://api.ryzumi.net/api/downloader/ytmp3?url=${encodeURIComponent(url)}`)
-        ]);
+        // Penting: Jangan pakai Promise.all jika pakai proxy gratis (Limit 1 concurrency)
+        // Kita panggil satu per satu agar tidak kena Error 423 Locked
+        const mp4Res = await fetchRyzumi(`https://api.ryzumi.net/api/downloader/ytmp4?url=${encodeURIComponent(url)}`);
+        const mp3Res = await fetchRyzumi(`https://api.ryzumi.net/api/downloader/ytmp3?url=${encodeURIComponent(url)}`);
 
         const pickerItems = [];
         let title = "YouTube Video";
         let thumbnail = "";
 
-        if (mp4Res.status === "fulfilled" && mp4Res.value.ok) {
-          const d = await mp4Res.value.json();
+        if (mp4Res && mp4Res.ok) {
+          const d = await mp4Res.json();
           if (d.videoUrl) {
             title = d.title || title;
             thumbnail = d.thumbnail || thumbnail;
@@ -173,8 +171,8 @@ export async function POST(req: Request) {
           }
         }
 
-        if (mp3Res.status === "fulfilled" && mp3Res.value.ok) {
-          const d = await mp3Res.value.json();
+        if (mp3Res && mp3Res.ok) {
+          const d = await mp3Res.json();
           if (d.audioUrl) pickerItems.push({ url: d.audioUrl, type: "audio", quality: "AUDIO (320kbps)", extension: "mp3" });
         }
 
