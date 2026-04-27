@@ -23,25 +23,36 @@ def auto_update():
     try:
         from static_ffmpeg import add_paths
         import static_ffmpeg
-        add_paths() # Menambahkan ke PATH OS
+        add_paths() 
         
-        # Cari lokasi executable secara manual jika shutil.which gagal
+        # Cara 1: Gunakan shutil.which (Standar)
         ffmpeg_exe = shutil.which("ffmpeg")
         
-        # Jika di Linux/KataBump, biasanya ada di folder .local
+        # Cara 2: Cari di site-packages (Agresif)
         if not ffmpeg_exe:
-            # Mencoba mencari di lokasi standar static-ffmpeg
             import site
-            user_base = site.getuserbase()
-            potential_path = os.path.join(user_base, "bin", "ffmpeg")
-            if os.path.exists(potential_path):
-                ffmpeg_exe = potential_path
-        
-        print(f"--- LOG: FFmpeg Verified at {ffmpeg_exe} ---")
+            possible_paths = site.getsitepackages() + [site.getuserbase()]
+            for path in possible_paths:
+                # Cari folder static_ffmpeg/bin/linux/ (atau windows)
+                for root, dirs, files in os.walk(path):
+                    if "ffmpeg" in files and "static_ffmpeg" in root:
+                        potential = os.path.join(root, "ffmpeg")
+                        if os.access(potential, os.X_OK):
+                            ffmpeg_exe = potential
+                            break
+                if ffmpeg_exe: break
+
+        # Cara 3: Lokasi default KataBump/Linux
+        if not ffmpeg_exe:
+            user_bin = os.path.expanduser("~/.local/bin/ffmpeg")
+            if os.path.exists(user_bin):
+                ffmpeg_exe = user_bin
+
+        print(f"--- LOG: FFmpeg Path Verified: {ffmpeg_exe} ---")
         return ffmpeg_exe
     except Exception as e:
-        print(f"--- LOG: FFmpeg Error: {e} ---")
-        return "ffmpeg" # Fallback ke command standar
+        print(f"--- LOG: FFmpeg Search Error: {e} ---")
+        return "ffmpeg"
 
 FFMPEG_PATH = auto_update()
 
