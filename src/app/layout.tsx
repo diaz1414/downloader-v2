@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Fraunces, JetBrains_Mono } from "next/font/google"
 import "@/app/globals.css"
 import { I18nProvider } from "@/components/I18nProvider"
+import MusicPlayer from "@/components/MusicPlayer"
 
 const serif = Fraunces({
   subsets: ["latin"],
@@ -87,6 +88,9 @@ export default function RootLayout({
           <main className="relative z-10 min-h-screen">
             {children}
           </main>
+
+          {/* Vintage Music Player */}
+          <MusicPlayer />
         </I18nProvider>
       </body>
     </html>

@@ -104,3 +104,32 @@
 .theme-ripple.active {
   clip-path: circle(150% at var(--ripple-x) var(--ripple-y));
 }
+
+/* Music Player Vintage Styles */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  background: var(--color-hindia-gold);
+  cursor: pointer;
+  box-shadow: 0 0 5px var(--color-hindia-gold);
+}
+
+.vintage-glow {
+  text-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
+}
+
+@keyframes analog-flicker {
+  0% { opacity: 0.9; }
+  5% { opacity: 0.8; }
+  10% { opacity: 1; }
+  15% { opacity: 0.85; }
+  25% { opacity: 0.95; }
+  30% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+.analog-display {
+  animation: analog-flicker 4s infinite alternate;
+}
