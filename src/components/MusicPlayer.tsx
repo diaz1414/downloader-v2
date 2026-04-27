@@ -46,13 +46,18 @@ export default function MusicPlayer() {
 
   const nextTrack = () => {
     setCurrentTrackIndex((prev) => (prev + 1) % TRACKS.length)
-    setIsPlaying(false)
   }
 
   const prevTrack = () => {
     setCurrentTrackIndex((prev) => (prev - 1 + TRACKS.length) % TRACKS.length)
-    setIsPlaying(false)
   }
+
+  // Handle track changes
+  useEffect(() => {
+    if (isPlaying && audioRef.current) {
+      audioRef.current.play().catch(() => setIsPlaying(false))
+    }
+  }, [currentTrackIndex])
 
   return (
     <div className="fixed bottom-6 right-6 z-[100] font-mono">
@@ -143,13 +148,6 @@ export default function MusicPlayer() {
               />
             </div>
 
-            {/* Hidden Audio Element */}
-            <audio
-              ref={audioRef}
-              src={currentTrack.url}
-              onEnded={nextTrack}
-              autoPlay={false}
-            />
 
             {/* Decoration */}
             <div className="mt-4 flex justify-center gap-1 opacity-20">
@@ -160,6 +158,14 @@ export default function MusicPlayer() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Hidden Audio Element - Outside AnimatePresence to keep playing when collapsed */}
+      <audio
+        ref={audioRef}
+        src={currentTrack.url}
+        onEnded={nextTrack}
+        autoPlay={false}
+      />
     </div>
   )
 }
