@@ -13,6 +13,9 @@ except AttributeError:
 app = Flask(__name__)
 CORS(app)
 
+# Tampilkan versi yt-dlp saat startup untuk debugging
+print(f"DEBUG: Current yt-dlp version: {yt_dlp.version.__version__}")
+
 @app.route('/', methods=['GET'])
 def index():
     return jsonify({"status": "ready", "message": "DIAW Downloader Python Backend is Running"})
@@ -46,9 +49,10 @@ def download():
                 'Referer': 'https://www.youtube.com/',
             },
             # Spoofing client yang lebih beragam (Android, iOS, dan YouTube Music)
+            # Spoofing client TV & Web Creator (Paling ampuh saat ini)
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['ios', 'android', 'mweb'],
+                    'player_client': ['tv', 'web_creator'],
                     'player_skip': ['webpage', 'configs'],
                 }
             }
