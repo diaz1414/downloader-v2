@@ -16,8 +16,8 @@ export default function MusicPlayer() {
   const [volume, setVolume] = useState(0.5)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  // State untuk bar visualizer (16 bar agar lebih jelas gerakannya)
-  const [vuLevel, setVuLevel] = useState<number[]>(new Array(16).fill(5))
+  // State untuk bar visualizer (12 bar agar lebih tebal dan bertenaga)
+  const [vuLevel, setVuLevel] = useState<number[]>(new Array(12).fill(10))
   
   const audioContextRef = useRef<AudioContext | null>(null)
   const analyserRef = useRef<AnalyserNode | null>(null)
@@ -38,7 +38,7 @@ export default function MusicPlayer() {
       analyser.connect(ctx.destination)
       
       analyser.fftSize = 256 
-      analyser.smoothingTimeConstant = 0.5 // Sangat responsif
+      analyser.smoothingTimeConstant = 0.4 // Sangat responsif & liar
       
       audioContextRef.current = ctx
       analyserRef.current = analyser
@@ -50,34 +50,31 @@ export default function MusicPlayer() {
     }
   }
 
-  // Loop Visualizer
+  // Loop Visualizer (Symmetrical Center-Out)
   const updateVisualizer = () => {
     if (analyserRef.current && isPlaying) {
       const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount)
       analyserRef.current.getByteFrequencyData(dataArray)
       
-      const newLevels = []
+      const newLevels = new Array(12).fill(0)
       const binCount = analyserRef.current.frequencyBinCount
       
-      for (let i = 0; i < 16; i++) {
-        // Pemetaan index yang lebih merata agar nada tengah-tinggi lebih kena
-        const index = Math.floor(Math.pow(i / 15, 1.2) * (binCount * 0.5))
-        let value = dataArray[index] || 0
+      // Kita bagi 6 zona frekuensi, lalu di-mirror (kiri-kanan)
+      for (let i = 0; i < 6; i++) {
+        // Logarithmic index: 0=Bass, 5=Treble
+        const index = Math.floor(Math.pow(i / 5, 2) * (binCount * 0.4))
+        const value = dataArray[index] || 0
         
-        // Multiplier Bertenaga: Semakin ke kanan (nada tinggi), boost-nya semakin gila
-        // i=0-3 (Bass): 1.3x
-        // i=4-10 (Mid): 2.5x
-        // i=11-15 (High): 4.5x (Agar ujung kanan tetap joget)
-        let multiplier = 1.3
-        if (i >= 4 && i <= 10) multiplier = 2.5
-        if (i > 10) multiplier = 4.8
+        // Multiplier: Tengah (i=0) harus paling kuat, Pinggir (i=5) harus di-boost
+        let multiplier = 1.8 - (i * 0.1) // Bass dasar
+        if (i > 3) multiplier = 3.5 // Boost Highs di pinggir
         
-        let level = (value / 255) * 100 * multiplier
+        const level = Math.min(100, (value / 255) * 100 * multiplier)
+        const finalVal = Math.max(15, level + (Math.random() * 5))
         
-        // Tambahkan sedikit random movement (0-5%) supaya terlihat "analog" dan hidup
-        const jitter = Math.random() * 5
-        
-        newLevels.push(Math.max(12, level + jitter))
+        // Simetris: i=0 ke tengah (5,6), i=1 ke (4,7), dst
+        newLevels[5 - i] = finalVal // Sisi Kiri
+        newLevels[6 + i] = finalVal // Sisi Kanan
       }
       
       setVuLevel(newLevels)
@@ -90,7 +87,7 @@ export default function MusicPlayer() {
       animationRef.current = requestAnimationFrame(updateVisualizer)
     } else {
       if (animationRef.current) cancelAnimationFrame(animationRef.current)
-      setVuLevel(new Array(16).fill(5))
+      setVuLevel(new Array(12).fill(10))
     }
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current)
