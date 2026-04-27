@@ -24,13 +24,16 @@ def download():
             'quiet': True,
             'no_warnings': True,
             'format': 'best',
-            # Optimasi untuk kecepatan dan bypass
             'nocheckcertificate': True,
             'ignoreerrors': False,
-            'logtostderr': False,
-            'no_color': True,
             'no_playlist': True,
-            'extract_flat': False,
+            # Tambahan Penyamaran Browser
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-us,en;q=0.5',
+                'Sec-Fetch-Mode': 'navigate',
+            }
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -80,5 +83,5 @@ def download():
 
 if __name__ == '__main__':
     # Jalankan di port 5000 (standar Flask)
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 20212))
     app.run(host='0.0.0.0', port=port)
