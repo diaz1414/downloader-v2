@@ -39,7 +39,6 @@ def download():
     try:
         cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
         
-        # Konfigurasi Berdasarkan Panduan GitHub yt-dlp 2025/2026
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
@@ -47,36 +46,28 @@ def download():
             'nocheckcertificate': True,
             'ignoreerrors': False,
             'no_playlist': True,
-            # Teknik Bypass 2026 yang sudah berhasil
+            # Gunakan kombinasi TV dan Android VR (paling tahan banting)
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['mweb', 'ios'],
-                    'player_skip': ['webpage', 'configs'],
+                    'player_client': ['tv', 'android_vr'],
                 }
-            },
-            'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.9',
             }
         }
 
         if os.path.exists(cookies_path):
-            print(f"--- LOG: Menggunakan Cookies (Wiki Method) ---")
+            print(f"--- LOG: Mencoba dengan Cookies ---")
             ydl_opts['cookiefile'] = cookies_path
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             formats = info.get('formats', [])
-            picker = []
+            print(f"--- DEBUG: Menemukan {len(formats)} format ---")
             
             video_url = info.get('url')
             if not video_url and formats:
-                for f in reversed(formats):
-                    if f.get('url') and f.get('ext') == 'mp4':
-                        video_url = f.get('url')
-                        break
+                video_url = formats[-1].get('url')
 
+            picker = []
             for f in formats:
                 f_url = f.get('url')
                 if f_url and 'http' in f_url:
@@ -88,22 +79,25 @@ def download():
                         "type": "video" if f.get('vcodec') != 'none' else "audio"
                     })
 
+            if not picker and video_url:
+                picker.append({"url": video_url, "quality": "Default", "extension": "mp4", "type": "video"})
+
             return jsonify({
                 "status": "stream",
                 "url": video_url,
                 "title": info.get('title', 'Media Content'),
                 "thumbnail": info.get('thumbnail', ''),
-                "source": "Python 2026 Wiki-Optimized Engine",
+                "source": "Python 2026 TV-Engine",
                 "picker": picker[:20]
             })
 
     except Exception as e:
         print(f"Error Detail: {str(e)}")
-        # Jika masih minta sign-in, berarti butuh PO Token atau Cookies baru
-        return jsonify({
-            "status": "error", 
-            "message": "YouTube mendeteksi bot. Pastikan Cookies diambil lewat mode Incognito di robots.txt."
-        }), 500
+        # Cek apakah ada pesan spesifik dari yt-dlp
+        error_msg = str(e)
+        if "Sign in" in error_msg:
+            return jsonify({"status": "error", "message": "YouTube minta Login ulang. Ganti cookies kamu!"}), 500
+        return jsonify({"status": "error", "message": f"Gagal: {error_msg}"}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 20212))
