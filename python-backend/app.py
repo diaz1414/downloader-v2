@@ -6,12 +6,15 @@ import ssl
 import subprocess
 import sys
 
+import importlib
+
 # Fungsi Auto-Update yt-dlp saat startup (untuk hosting tanpa terminal)
 def auto_update():
     try:
         print("Checking for yt-dlp updates...")
         subprocess.check_call([sys.executable, "-m", "pip", "install", "-U", "yt-dlp"])
-        print("yt-dlp updated successfully!")
+        print("yt-dlp updated successfully! Reloading module...")
+        importlib.reload(yt_dlp)
     except Exception as e:
         print(f"Auto-update failed: {e}")
 
