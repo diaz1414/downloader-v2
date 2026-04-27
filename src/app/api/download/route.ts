@@ -117,7 +117,9 @@ export async function POST(req: Request) {
       } catch (e) { console.warn("IG Chocomilk Failed"); }
 
       try {
-        const igRes = await fetchWithAnt(`https://api.ryzumi.net/api/downloader/instagram?url=${encodeURIComponent(url)}`);
+        const igRes = await fetchWithTimeout(`https://api.ryzumi.net/api/downloader/instagram?url=${encodeURIComponent(url)}`, {
+          headers: baseHeaders
+        });
         if (igRes.ok) {
           const data = await igRes.json();
           if (data && data.medias && data.medias.length > 0) {
@@ -126,22 +128,23 @@ export async function POST(req: Request) {
               url: data.medias[0].url,
               title: data.title || "Instagram Content",
               thumbnail: data.thumbnail,
-              source: "Instagram Protocol (v2 - Ant)",
+              source: "Instagram Protocol (v2)",
               picker: data.medias.map((m: any) => ({
                 url: m.url, type: m.type, quality: m.quality || "HD", extension: m.extension || "mp4"
               }))
             });
           }
         }
-      } catch (e) { console.warn("IG Ryzumi Ant Failed"); }
+      } catch (e) { console.warn("IG Ryzumi Failed"); }
     }
 
     // 3. YOUTUBE PRIORITY
     if (isYoutube) {
       try {
+        // Optimasi: Panggil langsung tanpa ScrapingAnt untuk kecepatan maksimal
         const [mp4Res, mp3Res] = await Promise.allSettled([
-          fetchWithAnt(`https://api.ryzumi.net/api/downloader/ytmp4?url=${encodeURIComponent(url)}`),
-          fetchWithAnt(`https://api.ryzumi.net/api/downloader/ytmp3?url=${encodeURIComponent(url)}`)
+          fetchWithTimeout(`https://api.ryzumi.net/api/downloader/ytmp4?url=${encodeURIComponent(url)}`, { headers: baseHeaders }),
+          fetchWithTimeout(`https://api.ryzumi.net/api/downloader/ytmp3?url=${encodeURIComponent(url)}`, { headers: baseHeaders })
         ]);
 
         const pickerItems = [];
@@ -167,16 +170,18 @@ export async function POST(req: Request) {
             status: "stream",
             url: pickerItems[0].url,
             title, thumbnail,
-            source: "YouTube Protocol (Ant)",
+            source: "YouTube Protocol",
             picker: pickerItems
           });
         }
-      } catch (err) { console.warn("YouTube Ant Failed"); }
+      } catch (err) { console.warn("YouTube Failed"); }
     }
 
     // 4. UNIVERSAL FALLBACK
     try {
-      const ryzumiRes = await fetchWithAnt(`https://api.ryzumi.net/api/downloader/all-in-one?url=${encodeURIComponent(url)}`);
+      const ryzumiRes = await fetchWithTimeout(`https://api.ryzumi.net/api/downloader/all-in-one?url=${encodeURIComponent(url)}`, {
+        headers: baseHeaders
+      });
       if (ryzumiRes.ok) {
         const data = await ryzumiRes.json();
         if (data && data.medias && data.medias.length > 0) {
@@ -185,7 +190,7 @@ export async function POST(req: Request) {
             url: data.medias[0].url,
             title: data.title || "Archive Result",
             thumbnail: data.thumbnail,
-            source: "Universal Protocol (Ant)",
+            source: "Universal Protocol",
             picker: data.medias.map((m: any) => ({
               url: m.url, type: m.type || "video", quality: m.quality || "HD", extension: m.extension || "mp4"
             }))
