@@ -142,7 +142,7 @@ export default function MusicPlayer() {
             <div className="mb-4 flex items-center justify-between border-b border-hindia-gold/10 pb-2 text-[9px] uppercase tracking-[0.2em] text-hindia-gold/50">
               <span className="flex items-center gap-2">
                 <div className={`h-2 w-2 rounded-full ${isPlaying ? "bg-green-500 shadow-[0_0_12px_#22c55e]" : "bg-red-950"}`} />
-                Analog Frequency Meter
+                Music
               </span>
               <button onClick={() => setIsOpen(false)} className="hover:text-hindia-gold transition-colors">
                 <X size={14} />
