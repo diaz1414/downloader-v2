@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-export const runtime = "edge";
+// Menggunakan runtime standard (bukan edge) agar bisa memanggil alamat IP langsung
+// export const runtime = "edge"; 
 
 // URL Backend Python kamu
 const PYTHON_API = "http://51.68.34.78:20212/api/download";
