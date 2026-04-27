@@ -58,12 +58,27 @@ export async function POST(req: Request) {
     const isTiktok = url.includes("tiktok.com");
     const isInstagram = url.includes("instagram.com");
 
-    const randomIP = Array.from({ length: 4 }, () => Math.floor(Math.random() * 255)).join('.');
     const baseHeaders = {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
       "Accept": "application/json",
-      "X-Forwarded-For": randomIP,
+      "Referer": "https://downloaderv2.diaww.my.id/",
     };
+
+    // Helper internal untuk Ryzumi dengan fallback proxy
+    async function fetchRyzumi(apiUrl: string) {
+      // 1. Coba tembak langsung (Cepat)
+      try {
+        const res = await fetchWithTimeout(apiUrl, { headers: baseHeaders });
+        if (res.status === 403 || res.status === 429) {
+          throw new Error("Blocked by API");
+        }
+        return res;
+      } catch (err) {
+        // 2. Jika diblokir, tembak lewat proxy (Lambat tapi Berhasil)
+        console.warn(`[RETRY] API Blocked, using proxy for: ${apiUrl}`);
+        return await fetchWithAnt(apiUrl, { headers: baseHeaders });
+      }
+    }
 
     console.log(`[PROCESS] Target: ${url} (Region: sin1)`);
 
@@ -117,9 +132,7 @@ export async function POST(req: Request) {
       } catch (e) { console.warn("IG Chocomilk Failed"); }
 
       try {
-        const igRes = await fetchWithTimeout(`https://api.ryzumi.net/api/downloader/instagram?url=${encodeURIComponent(url)}`, {
-          headers: baseHeaders
-        });
+        const igRes = await fetchRyzumi(`https://api.ryzumi.net/api/downloader/instagram?url=${encodeURIComponent(url)}`);
         if (igRes.ok) {
           const data = await igRes.json();
           if (data && data.medias && data.medias.length > 0) {
@@ -141,10 +154,10 @@ export async function POST(req: Request) {
     // 3. YOUTUBE PRIORITY
     if (isYoutube) {
       try {
-        // Optimasi: Panggil langsung tanpa ScrapingAnt untuk kecepatan maksimal
+        // Optimasi: Panggil dengan sistem fallback (Direct first, then Proxy)
         const [mp4Res, mp3Res] = await Promise.allSettled([
-          fetchWithTimeout(`https://api.ryzumi.net/api/downloader/ytmp4?url=${encodeURIComponent(url)}`, { headers: baseHeaders }),
-          fetchWithTimeout(`https://api.ryzumi.net/api/downloader/ytmp3?url=${encodeURIComponent(url)}`, { headers: baseHeaders })
+          fetchRyzumi(`https://api.ryzumi.net/api/downloader/ytmp4?url=${encodeURIComponent(url)}`),
+          fetchRyzumi(`https://api.ryzumi.net/api/downloader/ytmp3?url=${encodeURIComponent(url)}`)
         ]);
 
         const pickerItems = [];
@@ -179,9 +192,7 @@ export async function POST(req: Request) {
 
     // 4. UNIVERSAL FALLBACK
     try {
-      const ryzumiRes = await fetchWithTimeout(`https://api.ryzumi.net/api/downloader/all-in-one?url=${encodeURIComponent(url)}`, {
-        headers: baseHeaders
-      });
+      const ryzumiRes = await fetchRyzumi(`https://api.ryzumi.net/api/downloader/all-in-one?url=${encodeURIComponent(url)}`);
       if (ryzumiRes.ok) {
         const data = await ryzumiRes.json();
         if (data && data.medias && data.medias.length > 0) {
