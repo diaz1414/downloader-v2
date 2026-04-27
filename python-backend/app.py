@@ -22,32 +22,19 @@ def auto_update():
     
     try:
         from static_ffmpeg import add_paths
-        import static_ffmpeg
         add_paths() 
         
-        # Cara 1: Gunakan shutil.which (Standar)
         ffmpeg_exe = shutil.which("ffmpeg")
         
-        # Cara 2: Cari di site-packages (Agresif)
+        # Jika masih tidak ketemu, coba cari di folder lokal site-packages
         if not ffmpeg_exe:
             import site
-            possible_paths = site.getsitepackages() + [site.getuserbase()]
-            for path in possible_paths:
-                # Cari folder static_ffmpeg/bin/linux/ (atau windows)
-                for root, dirs, files in os.walk(path):
-                    if "ffmpeg" in files and "static_ffmpeg" in root:
-                        potential = os.path.join(root, "ffmpeg")
-                        if os.access(potential, os.X_OK):
-                            ffmpeg_exe = potential
-                            break
-                if ffmpeg_exe: break
-
-        # Cara 3: Lokasi default KataBump/Linux
-        if not ffmpeg_exe:
-            user_bin = os.path.expanduser("~/.local/bin/ffmpeg")
-            if os.path.exists(user_bin):
-                ffmpeg_exe = user_bin
-
+            user_base = site.getuserbase()
+            # Standar lokasi static-ffmpeg di Linux
+            potential = os.path.join(user_base, "bin", "ffmpeg")
+            if os.path.exists(potential):
+                ffmpeg_exe = potential
+        
         print(f"--- LOG: FFmpeg Path Verified: {ffmpeg_exe} ---")
         return ffmpeg_exe
     except Exception as e:
@@ -74,7 +61,7 @@ def clean_cookies(path):
                 f.write(new_content)
             print("--- LOG: Cookies Sanitized ---")
         except Exception as e:
-            print(f"--- LOG: Cookies Fix Failed: {e} ---")
+            print("--- LOG: Cookies Fix Failed ---")
 
 @app.route('/', methods=['GET'])
 def index():
@@ -87,7 +74,7 @@ def index():
 @app.route('/api/get', methods=['GET'])
 def get_media():
     url = request.args.get('url')
-    format_type = request.args.get('format', 'mp4') # 'mp4' atau 'mp3'
+    format_type = request.args.get('format', 'mp4')
     if not url: return "URL is required", 400
 
     temp_dir = tempfile.mkdtemp()
@@ -97,12 +84,15 @@ def get_media():
         cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
         clean_cookies(cookies_path)
 
-        # LOGIKA DISAMAKAN DENGAN BOT TELEGRAM KAMU
+        # LOGIKA SAMA PERSIS DENGAN BOT TELEGRAM
+        filename = os.path.join(temp_dir, f"diaww_dl_{unique_id}_{format_type}")
         ydl_opts = {
+            'outtmpl': f'{filename}.%(ext)s',
             'quiet': True,
             'no_warnings': True,
+            'noplaylist': True,
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
             'nocheckcertificate': True,
-            'outtmpl': os.path.join(temp_dir, f'diaww_dl_{unique_id}_%(title).100s.%(ext)s'),
         }
 
         if format_type == 'mp3':
@@ -115,7 +105,6 @@ def get_media():
                 }],
             })
         else:
-            # FALLBACK SYSTEM: Prioritas MP4 High Quality agar Suara Ada
             ydl_opts.update({
                 'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
                 'merge_output_format': 'mp4',
@@ -126,21 +115,32 @@ def get_media():
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             print(f"--- LOG: Processing {url} as {format_type} ---")
-            info = ydl.extract_info(url, download=True)
-            filename = ydl.prepare_filename(info)
             
-            # Koreksi ekstensi jika berubah setelah konversi/merge (mkv -> mp4)
-            if not os.path.exists(filename):
-                base = os.path.splitext(filename)[0]
-                for ext in ['.mp4', '.mp3', '.mkv', '.webm']:
-                    if os.path.exists(base + ext):
-                        filename = base + ext
+            # URL Cleaning (Sesuai Bot Tele)
+            clean_url = url
+            if "youtube.com" in url or "youtu.be" in url:
+                clean_url = url.split('&list=')[0].split('?list=')[0].split('&si=')[0].split('?si=')[0].split('&start_radio=')[0]
+            elif "tiktok.com" in url:
+                clean_url = url.split('?')[0]
+
+            info = ydl.extract_info(clean_url, download=True)
+            actual_filename = ydl.prepare_filename(info)
+            
+            # Ekstensi Correction (Sesuai Bot Tele)
+            if format_type == 'mp3':
+                actual_filename = f"{filename}.mp3"
+            
+            if not os.path.exists(actual_filename):
+                base_path = os.path.splitext(actual_filename)[0]
+                for ext in ['.mp4', '.mkv', '.webm', '.3gp', '.mp3']:
+                    if os.path.exists(base_path + ext):
+                        actual_filename = base_path + ext
                         break
 
             def generate():
-                with open(filename, 'rb') as f:
+                with open(actual_filename, 'rb') as f:
                     while True:
-                        chunk = f.read(1024 * 1024) # 1MB chunks
+                        chunk = f.read(1024 * 1024)
                         if not chunk: break
                         yield chunk
                 shutil.rmtree(temp_dir, ignore_errors=True)
@@ -149,8 +149,8 @@ def get_media():
                 stream_with_context(generate()),
                 mimetype='video/mp4' if format_type == 'mp4' else 'audio/mpeg',
                 headers={
-                    "Content-Disposition": f"attachment; filename=\"{os.path.basename(filename)}\"",
-                    "Content-Length": os.path.getsize(filename)
+                    "Content-Disposition": f"attachment; filename=\"{os.path.basename(actual_filename)}\"",
+                    "Content-Length": os.path.getsize(actual_filename)
                 }
             )
     except Exception as e:
@@ -175,7 +175,7 @@ def download():
             'nocheckcertificate': True,
             'ignoreerrors': True,
             'no_playlist': True,
-            'extractor_args': {'youtube': {'player_client': ['tv', 'ios', 'web', 'android']}},
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         }
 
         if os.path.exists(cookies_path): ydl_opts['cookiefile'] = cookies_path
@@ -183,8 +183,6 @@ def download():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             
-            # Kita buat picker sederhana: MP4 dan MP3 saja
-            # Keduanya dipaksa lewat proxy /api/get agar suara aman
             picker = [
                 {
                     "url": f"/python-api/api/get?url={url}&format=mp4",
