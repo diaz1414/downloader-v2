@@ -6,9 +6,8 @@ import { Play, Pause, SkipForward, SkipBack, Volume2, Music, X, ChevronUp, Radio
 
 // Daftar lagu - USER silakan masukkan file .mp3 ke /public/music/ dengan nama yang sama
 const TRACKS = [
-  { id: 1, title: "Vintage Soul", artist: "Analog Dreams", url: "/music/track1.mp3" },
-  { id: 2, title: "Midnight Radio", artist: "Hindia Vibes", url: "/music/track2.mp3" },
-  { id: 3, title: "Lofi Memories", artist: "Diaz Studio", url: "/music/track3.mp3" },
+  { id: 1, title: "Old Songs", artist: "LoFi Remix", url: "/music/old songs 1.mp3" },
+  { id: 2, title: "Old Songs 2", artist: "LoFi Remix", url: "/music/old songs 2.mp3" },
 ]
 
 export default function MusicPlayer() {
@@ -113,8 +112,8 @@ export default function MusicPlayer() {
               <button onClick={prevTrack} className="text-hindia-gold/70 hover:text-hindia-gold active:scale-90 transition-all">
                 <SkipBack size={24} fill="currentColor" />
               </button>
-              
-              <button 
+
+              <button
                 onClick={togglePlay}
                 className="flex h-14 w-14 items-center justify-center rounded-full bg-hindia-gold text-hindia-black hover:bg-white active:scale-95 transition-all shadow-lg"
               >
@@ -129,11 +128,11 @@ export default function MusicPlayer() {
             {/* Volume Control */}
             <div className="flex items-center gap-3 px-2">
               <Volume2 size={14} className="text-hindia-gold/50" />
-              <input 
-                type="range" 
-                min="0" 
-                max="1" 
-                step="0.01" 
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
                 value={volume}
                 onChange={(e) => {
                   const val = parseFloat(e.target.value)
@@ -145,7 +144,7 @@ export default function MusicPlayer() {
             </div>
 
             {/* Hidden Audio Element */}
-            <audio 
+            <audio
               ref={audioRef}
               src={currentTrack.url}
               onEnded={nextTrack}
