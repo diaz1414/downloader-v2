@@ -57,19 +57,19 @@ def download():
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
-            'format': 'best',
+            'format': 'bestvideo+bestaudio/best',
             'nocheckcertificate': True,
             'ignoreerrors': False,
             'no_playlist': True,
             'cachedir': False,
-            # User-Agent khusus Brave / Chrome di Windows
             'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['tv', 'ios'],
-                    'player_skip': ['webpage', 'configs'],
+                    'player_client': ['tv', 'ios', 'web'],
                 }
-            }
+            },
+            'youtube_include_dash_manifest': True,
+            'youtube_include_hls_manifest': True,
         }
 
         if os.path.exists(cookies_path):
