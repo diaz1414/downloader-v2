@@ -19,38 +19,50 @@ def download():
         return jsonify({"status": "error", "message": "URL is required"}), 400
 
     try:
-        # Konfigurasi Heavy Duty untuk menembus proteksi YouTube terbaru
+        # Tentukan path file cookies
+        cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
+        
+        # Konfigurasi ULTRA BYPASS
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
-            'format': 'best',
+            'format': 'bestvideo+bestaudio/best',
             'nocheckcertificate': True,
             'ignoreerrors': False,
             'no_playlist': True,
-            # Menyamar sebagai berbagai jenis client untuk menghindari deteksi
+            'wait_for_video': 5,
+            # Penyamaran Header yang lebih lengkap
             'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                 'Accept-Language': 'en-US,en;q=0.9',
                 'Referer': 'https://www.youtube.com/',
             },
-            # Gunakan client Android untuk bypass "Player Response" error
+            # Spoofing client yang lebih beragam (Android, iOS, dan YouTube Music)
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['android', 'web'],
-                    'player_skip': ['webpage', 'configs']
+                    'player_client': ['ios', 'android', 'mweb'],
+                    'player_skip': ['webpage', 'configs'],
                 }
             }
         }
 
+        # Jika file cookies.txt ada, gunakan untuk bypass
+        if os.path.exists(cookies_path):
+            print(f"Using cookies from: {cookies_path}")
+            ydl_opts['cookiefile'] = cookies_path
+        else:
+            print("No cookies.txt found, using guest mode.")
+
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            # Menggunakan process_ie untuk ekstraksi yang lebih mendalam
             info = ydl.extract_info(url, download=False)
             
             formats = info.get('formats', [])
             picker = []
             
-            # Format dasar
-            video_url = info.get('url')
+            # Link utama
+            video_url = info.get('url') or (formats[-1].get('url') if formats else None)
             
             for f in formats:
                 if f.get('url') and (f.get('vcodec') != 'none' or f.get('acodec') != 'none'):
@@ -65,22 +77,27 @@ def download():
                             "type": "video" if f.get('vcodec') != 'none' else "audio"
                         })
 
+            # Sortir picker agar video ada di atas
+            picker.sort(key=lambda x: x['type'], reverse=True)
+
             return jsonify({
                 "status": "stream",
                 "url": video_url,
                 "title": info.get('title', 'Media Content'),
                 "thumbnail": info.get('thumbnail', ''),
-                "source": "Python Heavy-Duty Engine",
-                "picker": picker[:15]
+                "source": "Python Ultra-Bypass Engine",
+                "picker": picker[:20]
             })
 
     except Exception as e:
         print(f"Error: {str(e)}")
+        # Berikan pesan error yang lebih jelas ke frontend
         return jsonify({
             "status": "error", 
-            "message": f"Gagal mengambil data: {str(e)}"
+            "message": f"YouTube memblokir server ini. Solusi: Update yt-dlp atau gunakan cookies. ({str(e)})"
         }), 500
 
 if __name__ == '__main__':
+    # Pastikan port sesuai dengan hostingan kamu
     port = int(os.environ.get('PORT', 20212))
     app.run(host='0.0.0.0', port=port)
