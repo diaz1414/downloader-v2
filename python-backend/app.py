@@ -35,12 +35,13 @@ def get_ydl_opts(temp_dir, unique_id, format_type, url, is_preview=False):
         'ignoreerrors': False,
         'extractor_args': {
             'youtube': {
-                'player_client': ['ios', 'android', 'web_creator', 'tv', 'web_embedded'],
+                'player_client': ['android_vr', 'ios', 'android', 'web_creator', 'tv'],
                 'po_token': 'MlOnlnIeoh3rhaeqsoswNbpREsch2vENGukFpo8UkmmKnMTwREuVSR8DV2pXE_4yVdOEVkD3MyuA0wAPyjEa5hk_fSlSHPhF3lOgeYd8DgQN0XBi2g==',
                 'visitor_data': 'CgtMaGpjd0szVDhXQSjKxrzPBjIKCgJJRBIEGgAgVWLfAgrcAjE4LllUPVVWa3RvX1J2U0NIdGFhbmNfOGlJZGlYNklERjFKUHl0bTB4MW1yWWh1eGZQc1hVaHV3NGh6UzNKN3ZnYzRocTNTVnFtOXZ4OGlaUHlJMF9ST2dubk9PdU8yTFhoM1dFa1ZzU2VSbkRNVWNYY214WUFERUZJem94Q1o4c0c1eHlmWEhaRjNVYVUtU3RJNkYzTERFc0dVeEN4Tlp6VVppSXIzV1U4NUNzQTZtSzVwYUNCZ3ZtMk9CYjhEaXhMdk9xNDNLc3VwclpaY1E4eWY1WnJhRzAzbExzQVd0cTRwdVBWbTRHbVRJM05za0NwNXd5Z1cwOXhNMmtZZXFEc09wUkdQbElURUx0d093Mzk2VVM2eDhrQW15RVBDd0FrSTVXTHFxbDZyczRieFlELXdHbDFCVVhPd1Y2bEs0TkZpMENHVEVaQU8tZnR5RzZWeVh4bm5aVGItQQ=='
             }
         },
-        'check_formats': False, # Jangan cek format satu-satu (biar cepat & tidak eror)
+        'impersonate': 'chrome', # Menyamar jadi Chrome asli
+        'check_formats': False,
         'ignore_no_formats_error': True
     }
 
