@@ -25,22 +25,25 @@ def get_ydl_opts(temp_dir, unique_id, format_type, url, is_preview=False):
     # LOGIKA STEALTH YOUTUBE: Jangan pakai cookies untuk YouTube agar bisa pakai klien iOS/Android
     is_youtube = "youtube.com" in url or "youtu.be" in url
     
+    # User agent mobile yang sangat mirip dengan aplikasi YouTube asli
+    mobile_ua = 'com.google.android.youtube/19.16.36 (Linux; U; Android 14; id_ID; Pixel 8 Pro; Build/UQ1A.240205.004) terminal/1.1'
+    
     opts = {
         'outtmpl': f'{filename}.%(ext)s',
         'quiet': True,
         'no_warnings': True,
         'noplaylist': True,
-        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'user_agent': mobile_ua if is_youtube else 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         'nocheckcertificate': True,
         'ignoreerrors': False,
         'extractor_args': {
             'youtube': {
-                'player_client': ['android_vr', 'ios', 'android', 'web_creator', 'tv'],
+                'player_client': ['android_vr', 'ios', 'android', 'tv'],
+                'player_skip': ['configs', 'webpage'], # Lewati pengecekan yang sering bikin eror
                 'po_token': 'MlOnlnIeoh3rhaeqsoswNbpREsch2vENGukFpo8UkmmKnMTwREuVSR8DV2pXE_4yVdOEVkD3MyuA0wAPyjEa5hk_fSlSHPhF3lOgeYd8DgQN0XBi2g==',
                 'visitor_data': 'CgtMaGpjd0szVDhXQSjKxrzPBjIKCgJJRBIEGgAgVWLfAgrcAjE4LllUPVVWa3RvX1J2U0NIdGFhbmNfOGlJZGlYNklERjFKUHl0bTB4MW1yWWh1eGZQc1hVaHV3NGh6UzNKN3ZnYzRocTNTVnFtOXZ4OGlaUHlJMF9ST2dubk9PdU8yTFhoM1dFa1ZzU2VSbkRNVWNYY214WUFERUZJem94Q1o4c0c1eHlmWEhaRjNVYVUtU3RJNkYzTERFc0dVeEN4Tlp6VVppSXIzV1U4NUNzQTZtSzVwYUNCZ3ZtMk9CYjhEaXhMdk9xNDNLc3VwclpaY1E4eWY1WnJhRzAzbExzQVd0cTRwdVBWbTRHbVRJM05za0NwNXd5Z1cwOXhNMmtZZXFEc09wUkdQbElURUx0d093Mzk2VVM2eDhrQW15RVBDd0FrSTVXTHFxbDZyczRieFlELXdHbDFCVVhPd1Y2bEs0TkZpMENHVEVaQU8tZnR5RzZWeVh4bm5aVGItQQ=='
             }
         },
-        'impersonate': 'chrome', # Aktifkan kembali penyamaran Chrome
         'check_formats': False,
         'ignore_no_formats_error': True
     }
