@@ -11,14 +11,16 @@ interface ResultData {
   thumbnail?: string
   source?: string
   author?: { name?: string; username?: string }
-  picker?: Array<{ url: string; type: string; quality?: string; extension?: string }>
+  picker?: Array<{ url: string; type: string; quality?: string; extension?: string; has_audio?: boolean }>
 }
 
 export function ResultSection({ data }: { data: ResultData | null }) {
   if (!data) return null
 
-  // Find if there is a video URL in the picker for preview
-  const videoPreviewUrl = data.picker?.find(item => item.type === "video")?.url || (data.status === "stream" ? data.url : null)
+  // Ambil preview URL terbaik (Utamakan video yang sudah jadi satu)
+  const videoPreviewUrl = data.picker?.find(item => item.type === "video" && item.has_audio)?.url 
+    || data.picker?.find(item => item.type === "video")?.url 
+    || (data.status === "stream" ? data.url : null)
 
   return (
     <motion.div
@@ -67,6 +69,7 @@ export function ResultSection({ data }: { data: ResultData | null }) {
               <div className="relative aspect-[3/4] sm:aspect-video lg:aspect-square bg-black border border-border group overflow-hidden shadow-2xl">
                 {videoPreviewUrl ? (
                   <video 
+                    key={videoPreviewUrl} // Force reload on change
                     src={videoPreviewUrl}
                     poster={data.thumbnail}
                     controls
@@ -82,7 +85,7 @@ export function ResultSection({ data }: { data: ResultData | null }) {
                   />
                 ) : (
                   <div className="w-full h-full bg-accent/5 flex flex-col items-center justify-center gap-4">
-                    <Film className="w-12 h-12 opacity-20" />
+                    <Music className="w-12 h-12 opacity-20" />
                     <span className="text-[10px] font-mono opacity-30 uppercase tracking-widest">No Visual Stream</span>
                   </div>
                 )}
@@ -118,17 +121,22 @@ export function ResultSection({ data }: { data: ResultData | null }) {
                       variant="outline"
                       className="cursor-download h-20 rounded-none justify-between px-6 border-border hover:border-accent hover:bg-accent/5 transition-all duration-300 group relative overflow-hidden"
                     >
-                      <a href={item.url} target="_blank" rel="noreferrer" download>
+                      <a 
+                        href={item.url} 
+                        target="_blank" 
+                        rel="noreferrer" 
+                        download={`${data.title || 'media'}.${item.extension || 'mp4'}`}
+                      >
                         <div className="flex flex-col items-start gap-1 relative z-10">
                           <span className="text-xs font-bold uppercase tracking-widest group-hover:text-accent transition-colors truncate max-w-[120px] md:max-w-full">
                             {item.quality || "Archive Stream"}
                           </span>
                           <span className="text-[9px] opacity-40 uppercase font-mono group-hover:opacity-60">
-                            {item.extension || item.type} • Secured
+                            {item.extension || item.type} • Secure Server
                           </span>
                         </div>
                         {item.type === "audio" ? 
-                          <Music className="w-5 h-5 opacity-40 group-hover:opacity-100 group-hover:text-accent transition-all" /> : 
+                          <Music className="w-5 h-5 opacity-40 group-hover:opacity-100 group-hover:text-accent transition-all animate-pulse" /> : 
                           <Download className="w-5 h-5 opacity-40 group-hover:opacity-100 group-hover:text-accent transition-all" />
                         }
                         <div className="absolute inset-y-0 left-0 w-1 bg-accent transform -translate-x-full group-hover:translate-x-0 transition-transform" />
@@ -140,7 +148,7 @@ export function ResultSection({ data }: { data: ResultData | null }) {
                     asChild
                     className="cursor-download h-20 w-full rounded-none bg-accent text-white hover:bg-accent/90 shadow-xl shadow-accent/20"
                   >
-                    <a href={data.url} target="_blank" rel="noreferrer" download>
+                    <a href={data.url} target="_blank" rel="noreferrer" download={`${data.title || 'media'}.mp4`}>
                       <Download className="w-4 h-4 mr-4" />
                       <div className="flex flex-col items-start leading-none">
                         <span className="text-sm font-bold tracking-widest uppercase">Fetch Stream</span>
