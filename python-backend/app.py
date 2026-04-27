@@ -67,21 +67,18 @@ def download():
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
-            # Format lebih fleksibel
-            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+            # Paksa cari format yang SUDAH ada video dan audio dalam satu link
+            'format': 'best[vcodec!=none][acodec!=none]/best',
             'nocheckcertificate': True,
             'ignoreerrors': True,
             'no_playlist': True,
             'cachedir': False,
-            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
             'extractor_args': {
                 'youtube': {
                     'player_client': ['tv', 'ios', 'web', 'android'],
                     'player_skip': ['configs'],
                 }
             },
-            'youtube_include_dash_manifest': True,
-            'youtube_include_hls_manifest': True,
             'ignore_no_formats_error': True,
             'allow_unplayable_formats': True,
         }
@@ -92,41 +89,69 @@ def download():
             info = ydl.extract_info(url, download=False)
             formats = info.get('formats', [])
             
-            # Ambil link asli langsung tanpa proxy apa pun
+            # Helper untuk cek validitas codec
+            def has_codec(codec):
+                return codec is not None and str(codec).lower() not in ['none', '', 'unknown']
+
+            # Cari video URL terbaik (Utamakan yang ada audio)
             video_url = info.get('url')
-            if not video_url and formats: video_url = formats[-1].get('url')
+            best_combined = None
+            
+            for f in reversed(formats):
+                if has_codec(f.get('vcodec')) and has_codec(f.get('acodec')) and f.get('url'):
+                    best_combined = f.get('url')
+                    break
+            
+            if best_combined:
+                video_url = best_combined
+            elif not video_url and formats:
+                video_url = formats[-1].get('url')
 
             picker = []
             for f in formats:
                 f_url = f.get('url')
-                vcodec = f.get('vcodec', 'none')
-                acodec = f.get('acodec', 'none')
+                vcodec = f.get('vcodec')
+                acodec = f.get('acodec')
                 
-                # Filter: Hanya ambil yang punya Video ATAU Audio
                 if f_url and 'http' in f_url:
                     ext = str(f.get('ext', '')).lower()
-                    
-                    # Daftar extension yang DILARANG (Gambar/Metadata)
                     blocked_exts = ['mhtml', 'jpg', 'png', 'webp', 'gif', 'json', 'xml']
-                    if ext in blocked_exts:
-                        continue
+                    if ext in blocked_exts: continue
                         
-                    if vcodec == 'none' and acodec == 'none':
-                        continue
+                    has_v = has_codec(vcodec)
+                    has_a = has_codec(acodec)
+                    
+                    if not has_v and not has_a: continue
                         
                     res = f.get('resolution') or f.get('format_note') or f.get('height') or "HD"
                     low_res = str(res).lower()
-                    
-                    # Abaikan storyboard/thumbnail
-                    if 'storyboard' in low_res or 'thumbnail' in low_res or 'preview' in low_res:
-                        continue
+                    if any(x in low_res for x in ['storyboard', 'thumbnail', 'preview']): continue
+
+                    # Labeling & Type
+                    if has_v and has_a:
+                        quality_label = f"{res}"
+                        ftype = "video"
+                        priority = 3
+                    elif has_v:
+                        quality_label = f"{res} (No Sound)"
+                        ftype = "video"
+                        priority = 1
+                    else: # Audio only
+                        quality_label = "Audio Only"
+                        ftype = "audio"
+                        priority = 2
 
                     picker.append({
                         "url": f_url,
-                        "quality": str(res),
+                        "quality": quality_label,
                         "extension": f.get('ext', 'mp4'),
-                        "type": "video" if vcodec != 'none' else "audio"
+                        "type": ftype,
+                        "has_audio": has_a,
+                        "priority": priority
                     })
+
+            # Sort: Video+Audio (3) > Audio Only (2) > Video Only (1)
+            picker.sort(key=lambda x: x.get('priority', 0), reverse=True)
 
             return jsonify({
                 "status": "stream",
