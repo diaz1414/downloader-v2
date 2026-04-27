@@ -51,17 +51,19 @@ def auto_update():
         
         if not ffmpeg_exe:
             print("--- WARNING: FFmpeg NOT FOUND! ---")
-            # Usaha terakhir: panggil via shell untuk cari lokasinya
             try:
                 ffmpeg_exe = subprocess.check_output(["which", "ffmpeg"]).decode().strip()
             except:
-                ffmpeg_exe = "ffmpeg" # Terpaksa pakai default
+                ffmpeg_exe = "ffmpeg"
         
-        print(f"--- LOG: FFmpeg Engine Ready at: {ffmpeg_exe} ---")
-        return ffmpeg_exe
+        # PENTING: Kembalikan PATH FOLDER agar yt-dlp bisa temukan ffprobe juga
+        ffmpeg_dir = os.path.dirname(ffmpeg_exe) if os.path.isabs(ffmpeg_exe) else None
+        
+        print(f"--- LOG: FFmpeg Engine Directory: {ffmpeg_dir or 'System Default'} ---")
+        return ffmpeg_dir
     except Exception as e:
         print(f"--- LOG: FFmpeg Critical Error: {e} ---")
-        return "ffmpeg"
+        return None
 
 FFMPEG_PATH = auto_update()
 

@@ -17,10 +17,14 @@ interface ResultData {
 export function ResultSection({ data }: { data: ResultData | null }) {
   if (!data) return null
 
-  // Ambil preview URL terbaik (Utamakan video yang sudah jadi satu)
-  const videoPreviewUrl = data.picker?.find(item => item.type === "video" && item.has_audio)?.url 
+  // Ambil preview URL terbaik (Kecuali IG/YT agar tidak memicu eror merging di awal)
+  const isDirectVideo = data.url && !data.url.includes("instagram.com") && !data.url.includes("youtube.com") && !data.url.includes("youtu.be")
+  
+  const videoPreviewUrl = isDirectVideo ? (
+    data.picker?.find(item => item.type === "video" && item.has_audio)?.url 
     || data.picker?.find(item => item.type === "video")?.url 
     || (data.status === "stream" ? data.url : null)
+  ) : null
 
   return (
     <motion.div
@@ -77,12 +81,17 @@ export function ResultSection({ data }: { data: ResultData | null }) {
                     controlsList="nodownload"
                   />
                 ) : data.thumbnail ? (
-                  <img 
-                    src={data.thumbnail} 
-                    alt="Archive Preview" 
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000 scale-105 group-hover:scale-100"
-                  />
+                  <div className="w-full h-full relative">
+                    <img 
+                      src={data.thumbnail} 
+                      alt="Archive Preview" 
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000 scale-105 group-hover:scale-100"
+                    />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Download className="w-12 h-12 text-white/50" />
+                    </div>
+                  </div>
                 ) : (
                   <div className="w-full h-full bg-accent/5 flex flex-col items-center justify-center gap-4">
                     <Music className="w-12 h-12 opacity-20" />
