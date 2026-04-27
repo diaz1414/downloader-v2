@@ -56,20 +56,28 @@ export default function MusicPlayer() {
       const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount)
       analyserRef.current.getByteFrequencyData(dataArray)
       
-      // Ambil 16 titik sample dengan pemetaan spektrum yang luas
       const newLevels = []
       const binCount = analyserRef.current.frequencyBinCount
       
       for (let i = 0; i < 16; i++) {
-        // Distribusi frekuensi: lebih fokus ke bass dan mid yang biasanya lebih aktif
-        const index = Math.floor(Math.pow(i / 15, 1.5) * (binCount * 0.6)) 
-        const value = dataArray[index] || 0
+        // Pemetaan index yang lebih merata agar nada tengah-tinggi lebih kena
+        const index = Math.floor(Math.pow(i / 15, 1.2) * (binCount * 0.5))
+        let value = dataArray[index] || 0
         
-        // Multiplier agar gerakan lebih tinggi (terutama untuk treble di bar kanan)
-        const multiplier = i < 4 ? 1.4 : (i < 10 ? 1.8 : 2.2)
-        const level = Math.min(100, (value / 255) * 100 * multiplier)
+        // Multiplier Bertenaga: Semakin ke kanan (nada tinggi), boost-nya semakin gila
+        // i=0-3 (Bass): 1.3x
+        // i=4-10 (Mid): 2.5x
+        // i=11-15 (High): 4.5x (Agar ujung kanan tetap joget)
+        let multiplier = 1.3
+        if (i >= 4 && i <= 10) multiplier = 2.5
+        if (i > 10) multiplier = 4.8
         
-        newLevels.push(Math.max(10, level))
+        let level = (value / 255) * 100 * multiplier
+        
+        // Tambahkan sedikit random movement (0-5%) supaya terlihat "analog" dan hidup
+        const jitter = Math.random() * 5
+        
+        newLevels.push(Math.max(12, level + jitter))
       }
       
       setVuLevel(newLevels)
