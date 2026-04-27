@@ -47,8 +47,9 @@ def get_ydl_opts(temp_dir, unique_id, format_type, url, is_preview=False):
         opts['cookiefile'] = cookies_path
 
     if is_preview:
-        # Saat preview, jangan batasi format agar tidak error
-        opts['format'] = 'best'
+        # Saat preview, jangan batasi format agar tidak error (Kecuali YouTube, biarkan kosong agar lebih fleksibel)
+        if not is_youtube:
+            opts['format'] = 'best'
     elif format_type == 'mp3':
         opts.update({
             'format': 'bestaudio/best',
@@ -59,10 +60,13 @@ def get_ydl_opts(temp_dir, unique_id, format_type, url, is_preview=False):
             }],
         })
     else:
-        opts.update({
-            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-            'merge_output_format': 'mp4',
-        })
+        # Jika YouTube, gunakan format yang lebih fleksibel agar pasti dapat audio+video
+        if is_youtube:
+            opts['format'] = 'bestvideo+bestaudio/best'
+        else:
+            opts['format'] = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
+            
+        opts['merge_output_format'] = 'mp4'
 
     cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
     if os.path.exists(cookies_path):
