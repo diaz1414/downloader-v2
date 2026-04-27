@@ -86,7 +86,7 @@ export function Hero({ onResult }: { onResult: (data: any) => void }) {
               </div>
               <div className="text-left">
                 <p className="text-[10px] font-mono uppercase tracking-widest opacity-40 leading-none mb-1">Available on</p>
-                <p className="text-xs font-bold font-mono tracking-wider uppercase group-hover:text-accent transition-colors">Telegram Bot @DIAW_BOT</p>
+                <p className="text-xs font-bold font-mono tracking-wider uppercase group-hover:text-accent transition-colors">Telegram Bot @diawwdownloadbot</p>
               </div>
             </a>
           </motion.div>
