@@ -76,10 +76,14 @@ def get_ydl_opts(temp_dir, unique_id, format_type, url, is_preview=False):
             
         opts['merge_output_format'] = 'mp4'
 
+    # PENTING: Jangan pakai cookies untuk YouTube di server hosting!
     cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
-    if os.path.exists(cookies_path):
+    if os.path.exists(cookies_path) and not is_youtube:
         opts['cookiefile'] = cookies_path
         
+    # Tambahkan verbose agar kita bisa lihat eror detailnya di console kamu
+    opts['verbose'] = True
+    
     return opts, filename
 
 # --- ROUTES ---
