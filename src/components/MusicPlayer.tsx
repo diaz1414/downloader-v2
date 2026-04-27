@@ -6,8 +6,8 @@ import { Play, Pause, SkipForward, SkipBack, Volume2, Music, X, ChevronUp, Radio
 
 // Daftar lagu - USER silakan masukkan file .mp3 ke /public/music/ dengan nama yang sama
 const TRACKS = [
-  { id: 1, title: "Old Songs", artist: "LoFi Remix", url: "/music/old songs 1.mp3" },
-  { id: 2, title: "Old Songs 2", artist: "LoFi Remix", url: "/music/old songs 2.mp3" },
+  { id: 1, title: "Old Songs", artist: "LoFi Remix", url: "/music/old%20song%201.mp3" },
+  { id: 2, title: "Old Songs 2", artist: "LoFi Remix", url: "/music/old%20song%202.mp3" },
 ]
 
 export default function MusicPlayer() {
