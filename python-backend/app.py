@@ -2,6 +2,13 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import yt_dlp
 import os
+import ssl
+
+# Matikan verifikasi SSL secara global untuk mengatasi error [SSL: CERTIFICATE_VERIFY_FAILED]
+try:
+    ssl._create_default_https_context = ssl._create_unverified_context
+except AttributeError:
+    pass
 
 app = Flask(__name__)
 CORS(app)
