@@ -43,7 +43,7 @@ def download():
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
-            'format': 'bestvideo+bestaudio/best',
+            'format': 'best',
             'nocheckcertificate': True,
             'ignoreerrors': False,
             'no_playlist': True,
