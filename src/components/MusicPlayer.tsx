@@ -22,7 +22,7 @@ export default function MusicPlayer() {
   const audioContextRef = useRef<AudioContext | null>(null)
   const analyserRef = useRef<AnalyserNode | null>(null)
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null)
-  const animationRef = useRef<number>()
+  const animationRef = useRef<number | null>(null)
 
   const currentTrack = TRACKS[currentTrackIndex]
 
