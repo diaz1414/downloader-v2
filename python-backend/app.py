@@ -24,6 +24,20 @@ except AttributeError:
 app = Flask(__name__)
 CORS(app)
 
+# Fungsi untuk membersihkan file cookies (memastikan format Linux/LF)
+def clean_cookies(path):
+    if os.path.exists(path):
+        try:
+            with open(path, 'rb') as f:
+                content = f.read()
+            # Ganti CRLF (\r\n) ke LF (\n)
+            new_content = content.replace(b'\r\n', b'\n')
+            with open(path, 'wb') as f:
+                f.write(new_content)
+            print("--- LOG: File cookies berhasil dikonversi ke format Linux (LF) ---")
+        except Exception as e:
+            print(f"--- LOG: Gagal konversi cookies: {e} ---")
+
 @app.route('/', methods=['GET'])
 def index():
     return jsonify({"status": "ready", "yt_dlp": yt_dlp.version.__version__})
@@ -38,6 +52,7 @@ def download():
 
     try:
         cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
+        clean_cookies(cookies_path)
         
         ydl_opts = {
             'quiet': True,
@@ -46,22 +61,24 @@ def download():
             'nocheckcertificate': True,
             'ignoreerrors': False,
             'no_playlist': True,
-            # Gunakan kombinasi TV dan Android VR (paling tahan banting)
+            'cachedir': False,
+            # User-Agent khusus Brave / Chrome di Windows
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['tv', 'android_vr'],
+                    'player_client': ['tv', 'ios'],
+                    'player_skip': ['webpage', 'configs'],
                 }
             }
         }
 
         if os.path.exists(cookies_path):
-            print(f"--- LOG: Mencoba dengan Cookies ---")
+            print(f"--- LOG: Menggunakan Cookies (Sanitized) ---")
             ydl_opts['cookiefile'] = cookies_path
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             formats = info.get('formats', [])
-            print(f"--- DEBUG: Menemukan {len(formats)} format ---")
             
             video_url = info.get('url')
             if not video_url and formats:
@@ -79,25 +96,18 @@ def download():
                         "type": "video" if f.get('vcodec') != 'none' else "audio"
                     })
 
-            if not picker and video_url:
-                picker.append({"url": video_url, "quality": "Default", "extension": "mp4", "type": "video"})
-
             return jsonify({
                 "status": "stream",
                 "url": video_url,
                 "title": info.get('title', 'Media Content'),
                 "thumbnail": info.get('thumbnail', ''),
-                "source": "Python 2026 TV-Engine",
+                "source": "Python 2026 Sanitized-Engine",
                 "picker": picker[:20]
             })
 
     except Exception as e:
         print(f"Error Detail: {str(e)}")
-        # Cek apakah ada pesan spesifik dari yt-dlp
-        error_msg = str(e)
-        if "Sign in" in error_msg:
-            return jsonify({"status": "error", "message": "YouTube minta Login ulang. Ganti cookies kamu!"}), 500
-        return jsonify({"status": "error", "message": f"Gagal: {error_msg}"}), 500
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 20212))
