@@ -36,16 +36,21 @@ def get_ydl_opts(temp_dir, unique_id, format_type, url, is_preview=False):
         'user_agent': mobile_ua if is_youtube else 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         'nocheckcertificate': True,
         'ignoreerrors': False,
-        'force_ipv4': True, # Paksa IPv4 karena IPv6 sering diblokir YouTube
+        'force_ipv4': True, 
+        'http_headers': {
+            'User-Agent': mobile_ua if is_youtube else 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        },
         'extractor_args': {
             'youtube': {
-                'player_client': ['android_vr', 'ios', 'android', 'tv'],
+                'player_client': ['android', 'ios', 'tv'], 
                 'player_skip': ['configs', 'webpage'],
-                'formats': ['missing_pot', 'dashy'], # Ambil format yang butuh PO Token juga
+                'formats': ['missing_pot', 'dashy'],
                 'po_token': 'MlOnlnIeoh3rhaeqsoswNbpREsch2vENGukFpo8UkmmKnMTwREuVSR8DV2pXE_4yVdOEVkD3MyuA0wAPyjEa5hk_fSlSHPhF3lOgeYd8DgQN0XBi2g==',
                 'visitor_data': 'CgtMaGpjd0szVDhXQSjKxrzPBjIKCgJJRBIEGgAgVWLfAgrcAjE4LllUPVVWa3RvX1J2U0NIdGFhbmNfOGlJZGlYNklERjFKUHl0bTB4MW1yWWh1eGZQc1hVaHV3NGh6UzNKN3ZnYzRocTNTVnFtOXZ4OGlaUHlJMF9ST2dubk9PdU8yTFhoM1dFa1ZzU2VSbkRNVWNYY214WUFERUZJem94Q1o4c0c1eHlmWEhaRjNVYVUtU3RJNkYzTERFc0dVeEN4Tlp6VVppSXIzV1U4NUNzQTZtSzVwYUNCZ3ZtMk9CYjhEaXhMdk9xNDNLc3VwclpaY1E4eWY1WnJhRzAzbExzQVd0cTRwdVBWbTRHbVRJM05za0NwNXd5Z1cwOXhNMmtZZXFEc09wUkdQbElURUx0d093Mzk2VVM2eDhrQW15RVBDd0FrSTVXTHFxbDZyczRieFlELXdHbDFCVVhPd1Y2bEs0TkZpMENHVEVaQU8tZnR5RzZWeVh4bm5aVGItQQ=='
             }
         },
+        'youtube_include_dash_manifest': False, 
+        'youtube_include_hls_manifest': False,
         'check_formats': False,
         'ignore_no_formats_error': True
     }
