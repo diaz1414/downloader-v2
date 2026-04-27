@@ -22,13 +22,26 @@ def auto_update():
     
     try:
         from static_ffmpeg import add_paths
-        add_paths()
+        import static_ffmpeg
+        add_paths() # Menambahkan ke PATH OS
+        
+        # Cari lokasi executable secara manual jika shutil.which gagal
         ffmpeg_exe = shutil.which("ffmpeg")
-        print(f"--- LOG: FFmpeg Found at {ffmpeg_exe} ---")
+        
+        # Jika di Linux/KataBump, biasanya ada di folder .local
+        if not ffmpeg_exe:
+            # Mencoba mencari di lokasi standar static-ffmpeg
+            import site
+            user_base = site.getuserbase()
+            potential_path = os.path.join(user_base, "bin", "ffmpeg")
+            if os.path.exists(potential_path):
+                ffmpeg_exe = potential_path
+        
+        print(f"--- LOG: FFmpeg Verified at {ffmpeg_exe} ---")
         return ffmpeg_exe
     except Exception as e:
         print(f"--- LOG: FFmpeg Error: {e} ---")
-        return None
+        return "ffmpeg" # Fallback ke command standar
 
 FFMPEG_PATH = auto_update()
 
@@ -144,7 +157,6 @@ def download():
         cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
         clean_cookies(cookies_path)
         
-        # Opsi Probing (Cepat, tanpa download)
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
@@ -159,63 +171,35 @@ def download():
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
-            formats = info.get('formats', [])
             
-            def has_codec(codec):
-                return codec is not None and str(codec).lower() not in ['none', '', 'unknown']
-
-            # Link default untuk preview
-            video_url = info.get('url') or (formats[-1].get('url') if formats else None)
-
-            picker = []
-            for f in formats:
-                f_url = f.get('url')
-                vcodec = f.get('vcodec')
-                acodec = f.get('acodec')
-                
-                if f_url and 'http' in f_url:
-                    ext = str(f.get('ext', '')).lower()
-                    if ext in ['mhtml', 'jpg', 'png', 'webp', 'gif', 'json', 'xml']: continue
-                        
-                    has_v = has_codec(vcodec)
-                    has_a = has_codec(acodec)
-                    if not has_v and not has_a: continue
-                        
-                    res = f.get('resolution') or f.get('format_note') or f.get('height') or "HD"
-                    if any(x in str(res).lower() for x in ['storyboard', 'thumbnail', 'preview']): continue
-
-                    # Logika Proxy untuk Merging
-                    final_url = f_url
-                    if has_v and has_a:
-                        label = f"{res}"
-                        priority = 3
-                    elif has_v:
-                        label = f"{res} (Pro Merge)"
-                        final_url = f"/python-api/api/get?url={url}&format=mp4"
-                        priority = 1
-                    else:
-                        label = "Audio Only"
-                        final_url = f"/python-api/api/get?url={url}&format=mp3"
-                        priority = 2
-
-                    picker.append({
-                        "url": final_url,
-                        "quality": label,
-                        "extension": "mp4" if has_v else "mp3",
-                        "type": "video" if has_v else "audio",
-                        "has_audio": has_a,
-                        "priority": priority
-                    })
-
-            picker.sort(key=lambda x: x.get('priority', 0), reverse=True)
+            # Kita buat picker sederhana: MP4 dan MP3 saja
+            # Keduanya dipaksa lewat proxy /api/get agar suara aman
+            picker = [
+                {
+                    "url": f"/python-api/api/get?url={url}&format=mp4",
+                    "quality": "🎬 MP4 (Video)",
+                    "extension": "mp4",
+                    "type": "video",
+                    "has_audio": True,
+                    "priority": 2
+                },
+                {
+                    "url": f"/python-api/api/get?url={url}&format=mp3",
+                    "quality": "🎵 MP3 (Audio)",
+                    "extension": "mp3",
+                    "type": "audio",
+                    "has_audio": True,
+                    "priority": 1
+                }
+            ]
 
             return jsonify({
                 "status": "stream",
-                "url": f"/python-api/api/get?url={url}&format=mp4" if "instagram.com" in url or "youtube.com" in url else video_url,
+                "url": f"/python-api/api/get?url={url}&format=mp4",
                 "title": info.get('title', 'Media Content'),
                 "thumbnail": info.get('thumbnail', ''),
-                "source": "Python Premium Engine",
-                "picker": picker[:20]
+                "source": "Python Premium Engine (Auto-Merge)",
+                "picker": picker
             })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
