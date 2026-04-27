@@ -7,12 +7,20 @@ import subprocess
 import sys
 import importlib
 
+# Integrasi FFmpeg Portable
+try:
+    from static_ffmpeg import add_paths
+    add_paths()
+except ImportError:
+    pass
+
 def auto_update():
     try:
         subprocess.check_call([sys.executable, "-m", "pip", "install", "-U", "yt-dlp"])
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "-U", "static-ffmpeg"])
         importlib.reload(yt_dlp)
-    except Exception as e:
-        print(f"Update failed: {e}")
+    except:
+        pass
 
 auto_update()
 
@@ -24,7 +32,6 @@ except AttributeError:
 app = Flask(__name__)
 CORS(app)
 
-# Fungsi untuk membersihkan file cookies (memastikan format Linux/LF)
 def clean_cookies(path):
     if os.path.exists(path):
         try:
@@ -33,9 +40,8 @@ def clean_cookies(path):
             new_content = content.replace(b'\r\n', b'\n')
             with open(path, 'wb') as f:
                 f.write(new_content)
-            print("--- LOG: File cookies berhasil dikonversi ke format Linux (LF) ---")
-        except Exception as e:
-            print(f"--- LOG: Gagal konversi cookies: {e} ---")
+        except:
+            pass
 
 @app.route('/', methods=['GET'])
 def index():
@@ -45,9 +51,7 @@ def index():
 def download():
     data = request.json
     url = data.get('url')
-    
-    if not url:
-        return jsonify({"status": "error", "message": "URL is required"}), 400
+    if not url: return jsonify({"status": "error", "message": "URL is required"}), 400
 
     try:
         cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
@@ -56,15 +60,15 @@ def download():
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
-            'format': 'best',
+            'format': 'bestvideo+bestaudio/best',
             'nocheckcertificate': True,
-            'ignoreerrors': False,
+            'ignoreerrors': True,
             'no_playlist': True,
             'cachedir': False,
             'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['tv', 'ios', 'web'],
+                    'player_client': ['tv', 'ios', 'web', 'android'],
                 }
             },
             'youtube_include_dash_manifest': True,
@@ -76,36 +80,44 @@ def download():
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
-            formats = info.get('formats', [])
+            if not info:
+                return jsonify({"status": "error", "message": "Failed to extract info"}), 404
             
-            # Ambil link video langsung tanpa proxy
+            formats = info.get('formats', [])
             video_url = info.get('url')
             if not video_url and formats:
+                # Ambil URL terbaik yang tersedia
                 video_url = formats[-1].get('url')
 
             picker = []
             for f in formats:
                 f_url = f.get('url')
-                if f_url and 'http' in f_url:
-                    res = f.get('resolution') or f.get('format_note') or f.get('height') or "HD"
-                    picker.append({
-                        "url": f_url,
-                        "quality": str(res),
-                        "extension": f.get('ext', 'mp4'),
-                        "type": "video" if f.get('vcodec') != 'none' else "audio"
-                    })
+                if not f_url or 'http' not in f_url: continue
+                
+                # Filter gambar/storyboard
+                ext = str(f.get('ext', '')).lower()
+                if ext in ['mhtml', 'jpg', 'png', 'webp']: continue
+                
+                res = f.get('resolution') or f.get('format_note') or f.get('height') or "HD"
+                if 'storyboard' in str(res).lower(): continue
+
+                picker.append({
+                    "url": f_url,
+                    "quality": str(res),
+                    "extension": ext if ext != 'none' else 'mp4',
+                    "type": "video" if f.get('vcodec') != 'none' else "audio"
+                })
 
             return jsonify({
                 "status": "stream",
                 "url": video_url,
                 "title": info.get('title', 'Media Content'),
                 "thumbnail": info.get('thumbnail', ''),
-                "source": "Python Private Engine (Stable)",
-                "picker": picker[:20]
+                "source": "Python Direct Engine",
+                "picker": picker[:30]
             })
 
     except Exception as e:
-        print(f"Error Detail: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':

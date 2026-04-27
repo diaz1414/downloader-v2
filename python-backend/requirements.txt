@@ -5,3 +5,4 @@ gunicorn
 requests
 certifi
 brotli
+static-ffmpeg
