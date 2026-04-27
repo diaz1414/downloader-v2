@@ -7,7 +7,6 @@ import subprocess
 import sys
 import importlib
 
-# Fungsi Auto-Update
 def auto_update():
     try:
         subprocess.check_call([sys.executable, "-m", "pip", "install", "-U", "yt-dlp"])
@@ -40,6 +39,7 @@ def download():
     try:
         cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
         
+        # Konfigurasi Berdasarkan Panduan GitHub yt-dlp 2025/2026
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
@@ -47,31 +47,36 @@ def download():
             'nocheckcertificate': True,
             'ignoreerrors': False,
             'no_playlist': True,
-            'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.9',
-            },
+            # Gunakan mweb client seperti yang disarankan Wiki GitHub
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['android', 'web'],
+                    'player_client': ['mweb', 'ios'],
                     'player_skip': ['webpage', 'configs'],
                 }
+            },
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9',
             }
         }
 
         if os.path.exists(cookies_path):
-            print(f"--- LOG: Menggunakan file cookies dari {cookies_path} ---")
+            print(f"--- LOG: Menggunakan Cookies (Wiki Method) ---")
             ydl_opts['cookiefile'] = cookies_path
-        else:
-            print("--- LOG: Tidak ada cookies.txt, menggunakan mode guest ---")
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             formats = info.get('formats', [])
             picker = []
-            video_url = info.get('url')
             
+            video_url = info.get('url')
+            if not video_url and formats:
+                for f in reversed(formats):
+                    if f.get('url') and f.get('ext') == 'mp4':
+                        video_url = f.get('url')
+                        break
+
             for f in formats:
                 f_url = f.get('url')
                 if f_url and 'http' in f_url:
@@ -83,21 +88,22 @@ def download():
                         "type": "video" if f.get('vcodec') != 'none' else "audio"
                     })
 
-            if not picker and video_url:
-                picker.append({"url": video_url, "quality": "Default", "extension": "mp4", "type": "video"})
-
             return jsonify({
                 "status": "stream",
                 "url": video_url,
                 "title": info.get('title', 'Media Content'),
                 "thumbnail": info.get('thumbnail', ''),
-                "source": "Python 2026 Stable",
+                "source": "Python 2026 Wiki-Optimized Engine",
                 "picker": picker[:20]
             })
 
     except Exception as e:
         print(f"Error Detail: {str(e)}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+        # Jika masih minta sign-in, berarti butuh PO Token atau Cookies baru
+        return jsonify({
+            "status": "error", 
+            "message": "YouTube mendeteksi bot. Pastikan Cookies diambil lewat mode Incognito di robots.txt."
+        }), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 20212))
