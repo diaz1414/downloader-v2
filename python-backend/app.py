@@ -121,8 +121,13 @@ def download():
     if not url: return jsonify({"status": "error", "message": "URL is required"}), 400
 
     try:
-        # Minimal info fetch
-        with yt_dlp.YoutubeDL({'quiet': True, 'noplaylist': True}) as ydl:
+        # Gunakan cookies juga di sini agar tidak diblokir Instagram
+        ydl_opts = {'quiet': True, 'noplaylist': True}
+        cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
+        if os.path.exists(cookies_path):
+            ydl_opts['cookiefile'] = cookies_path
+
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             
             picker = [
