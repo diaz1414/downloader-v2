@@ -43,11 +43,11 @@ def download():
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
-            'format': 'best',
+            'format': 'bestvideo+bestaudio/best',
             'nocheckcertificate': True,
             'ignoreerrors': False,
             'no_playlist': True,
-            # Gunakan mweb client seperti yang disarankan Wiki GitHub
+            # Teknik Bypass 2026 yang sudah berhasil
             'extractor_args': {
                 'youtube': {
                     'player_client': ['mweb', 'ios'],
