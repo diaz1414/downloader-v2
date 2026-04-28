@@ -27,6 +27,13 @@ subprojects {
                     val setNamespaceMethod = androidExt.javaClass.getMethod("setNamespace", String::class.java)
                     setNamespaceMethod.invoke(androidExt, groupStr)
                 }
+                
+                // Force compileSdkVersion to 34 to fix AAPT lStar error in older plugins
+                try {
+                    val setCompileSdkMethod = androidExt.javaClass.getMethod("setCompileSdkVersion", Int::class.java)
+                    setCompileSdkMethod.invoke(androidExt, 34)
+                } catch (e: Exception) {}
+                
             } catch (e: Exception) {
                 // Ignore if methods don't exist
             }
