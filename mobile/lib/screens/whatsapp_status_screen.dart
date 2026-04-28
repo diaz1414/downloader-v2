@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gal/gal.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:shared_storage/shared_storage.dart' as saf;
+import 'package:path_provider/path_provider.dart';
 import '../theme/app_theme.dart';
 import '../services/whatsapp_service.dart';
 import '../services/notification_service.dart';
@@ -242,10 +244,23 @@ class _StatusPreviewDialogState extends State<_StatusPreviewDialog> {
   Future<void> _saveMedia() async {
     setState(() => _isSaving = true);
     try {
+      String savePath = widget.status.path;
+      if (widget.status.isVideo && savePath.startsWith('content://')) {
+        final bytes = await saf.getDocumentContent(Uri.parse(savePath));
+        if (bytes != null) {
+          final tempDir = await getTemporaryDirectory();
+          final tempFile = File('${tempDir.path}/temp_video_${DateTime.now().millisecondsSinceEpoch}.mp4');
+          await tempFile.writeAsBytes(bytes);
+          savePath = tempFile.path;
+        } else {
+          throw Exception('Gagal membaca file video dari sistem');
+        }
+      }
+
       if (widget.status.isVideo) {
-        await Gal.putVideo(widget.status.path);
+        await Gal.putVideo(savePath);
       } else {
-        await Gal.putImage(widget.status.path);
+        await Gal.putImage(savePath);
       }
 
       await NotificationService().showDownloadNotification('wa_status_${widget.status.isVideo ? 'video' : 'image'}');
