@@ -38,6 +38,7 @@ dependencies:
   share_plus: ^13.1.0
   path_provider: ^2.1.5
   shared_storage: ^0.8.1
+  video_thumbnail: ^0.5.6
   
   # Image caching for thumbnails — using built-in Image.network instead
 
