@@ -28,10 +28,10 @@ subprojects {
                     setNamespaceMethod.invoke(androidExt, groupStr)
                 }
                 
-                // Force compileSdkVersion to 34 to fix AAPT lStar error in older plugins
+                // Force compileSdkVersion to 36 to fix AAPT lStar error in older plugins
                 try {
                     val setCompileSdkMethod = androidExt.javaClass.getMethod("setCompileSdkVersion", Int::class.java)
-                    setCompileSdkMethod.invoke(androidExt, 34)
+                    setCompileSdkMethod.invoke(androidExt, 36)
                 } catch (e: Exception) {}
                 
             } catch (e: Exception) {
