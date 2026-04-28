@@ -1,10 +1,13 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gal/gal.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 import '../theme/app_theme.dart';
 import '../services/whatsapp_service.dart';
 import '../services/notification_service.dart';
+import '../widgets/video_player_widget.dart';
 
 class WhatsAppStatusScreen extends StatefulWidget {
   const WhatsAppStatusScreen({super.key});
@@ -168,7 +171,7 @@ class _WhatsAppStatusScreenState extends State<WhatsAppStatusScreen> with Single
                 if (!status.isVideo)
                   Image.file(File(status.path), fit: BoxFit.cover)
                 else
-                  const Center(child: Icon(Icons.play_circle_outline_rounded, size: 40, color: AppColors.accent)),
+                  _VideoThumbnailWidget(videoPath: status.path),
                 Positioned(
                   bottom: 0, left: 0, right: 0,
                   child: Container(
@@ -234,7 +237,13 @@ class _StatusPreviewDialogState extends State<_StatusPreviewDialog> {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: widget.status.isVideo 
-              ? const Icon(Icons.video_library, size: 100, color: AppColors.accent)
+              ? SizedBox(
+                  height: 300,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: VideoPlayerWidget(url: widget.status.path),
+                  ),
+                )
               : Image.file(File(widget.status.path), height: 300, fit: BoxFit.contain),
           ),
           Padding(
@@ -247,6 +256,54 @@ class _StatusPreviewDialogState extends State<_StatusPreviewDialog> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _VideoThumbnailWidget extends StatefulWidget {
+  final String videoPath;
+  const _VideoThumbnailWidget({required this.videoPath});
+
+  @override
+  State<_VideoThumbnailWidget> createState() => _VideoThumbnailWidgetState();
+}
+
+class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
+  Uint8List? _thumbnailData;
+
+  @override
+  void initState() {
+    super.initState();
+    _generateThumbnail();
+  }
+
+  Future<void> _generateThumbnail() async {
+    try {
+      final uint8list = await VideoThumbnail.thumbnailData(
+        video: widget.videoPath,
+        imageFormat: ImageFormat.JPEG,
+        maxWidth: 200, 
+        quality: 25,
+      );
+      if (mounted && uint8list != null) {
+        setState(() => _thumbnailData = uint8list);
+      }
+    } catch (e) {
+      // Ignore error, fallback to icon
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_thumbnailData == null) {
+      return const Center(child: Icon(Icons.play_circle_outline_rounded, size: 40, color: AppColors.accent));
+    }
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.memory(_thumbnailData!, fit: BoxFit.cover),
+        const Center(child: Icon(Icons.play_circle_outline_rounded, size: 40, color: Colors.white70)),
+      ],
     );
   }
 }
