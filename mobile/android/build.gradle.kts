@@ -31,6 +31,16 @@ subprojects {
                 // Ignore if methods don't exist
             }
         }
+        
+        try {
+            tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class.java).configureEach {
+                kotlinOptions {
+                    jvmTarget = "1.8"
+                }
+            }
+        } catch (e: Exception) {
+            // Ignore if Kotlin compile task is not found
+        }
     }
 }
 
