@@ -20,7 +20,8 @@ class NotificationService {
       android: initializationSettingsAndroid,
     );
 
-    await _notificationsPlugin.initialize(initializationSettings);
+    // Fix: the parameter name is 'settings'
+    await _notificationsPlugin.initialize(settings: initializationSettings);
   }
 
   Future<void> showDownloadNotification(String fileName) async {
@@ -38,10 +39,10 @@ class NotificationService {
     );
 
     await _notificationsPlugin.show(
-      DateTime.now().millisecond,
-      'Download Selesai',
-      'File berhasil disimpan: $fileName',
-      platformDetails,
+      id: DateTime.now().millisecond,
+      title: 'Download Selesai',
+      body: 'File berhasil disimpan: $fileName',
+      notificationDetails: platformDetails,
     );
   }
 }

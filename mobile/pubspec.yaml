@@ -20,9 +20,8 @@ dependencies:
   chewie: ^1.7.5
   
   # File & Permissions
-  permission_handler: ^11.3.1
+  permission_handler: 12.0.1
   gal: ^2.3.2
-  shared_storage: ^0.8.1
   
   # Notifications
   flutter_local_notifications: ^21.0.0
@@ -38,6 +37,7 @@ dependencies:
   connectivity_plus: ^6.0.5
   share_plus: ^13.1.0
   path_provider: ^2.1.5
+  saf: 1.0.4
   
   # Image caching for thumbnails — using built-in Image.network instead
 

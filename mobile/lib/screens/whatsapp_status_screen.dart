@@ -2,9 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gal/gal.dart';
-import 'package:video_player/video_player.dart';
-import 'package:shared_storage/shared_storage.dart' as saf;
-import 'package:path_provider/path_provider.dart';
 import '../theme/app_theme.dart';
 import '../services/whatsapp_service.dart';
 import '../services/notification_service.dart';
@@ -21,69 +18,49 @@ class _WhatsAppStatusScreenState extends State<WhatsAppStatusScreen> with Single
   List<WhatsAppStatus> _images = [];
   List<WhatsAppStatus> _videos = [];
   bool _isLoading = true;
-  Uri? _grantedUri;
+  bool _hasPermission = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _checkPermissionsAndLoad();
+    _initServiceAndLoad();
   }
 
-  Future<void> _checkPermissionsAndLoad() async {
+  Future<void> _initServiceAndLoad() async {
     setState(() => _isLoading = true);
-    
-    // Request Notification permission first
+    // Primary path for WhatsApp
+    await WhatsAppService.instance.init(WhatsAppService.waPath);
     await WhatsAppService.instance.requestNotificationPermission();
-
-    // Try to find persisted URI for WhatsApp
-    Uri? uri = await WhatsAppService.instance.getPersistedUri('com.whatsapp');
     
-    if (uri != null) {
-      _grantedUri = uri;
-      _loadFromUri(uri);
+    final bool? isGranted = await WhatsAppService.instance.getFolderPermission();
+    
+    if (isGranted == true) {
+      _hasPermission = true;
+      await _refreshStatuses();
     } else {
-      setState(() => _isLoading = false);
+      // Try Business if primary fails? Or just let user grant primary.
+      // For now, if denied, we stay in "Grant Access" UI.
+      setState(() {
+        _hasPermission = false;
+        _isLoading = false;
+      });
     }
   }
 
-  Future<void> _requestFolderAccess() async {
-    // Show a helpful dialog explaining what to do
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.background,
-        title: Text('IZIN AKSES FOLDER', style: AppTextStyles.mono(weight: FontWeight.bold)),
-        content: Text(
-          'Android membutuhkan izin manual untuk mengakses folder WhatsApp.\n\nNanti tekan tombol "Gunakan Folder Ini" / "Use This Folder" di bagian bawah layar sistem.',
-          style: AppTextStyles.mono(size: 12),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('MENGERTI', style: AppTextStyles.mono(color: AppColors.accent)),
-          ),
-        ],
-      ),
-    );
-
-    final uri = await WhatsAppService.instance.requestFolderPermission('Android/media/com.whatsapp/WhatsApp/Media/.Statuses');
-    
-    if (uri != null) {
-      _grantedUri = uri;
-      _loadFromUri(uri);
-    }
-  }
-
-  Future<void> _loadFromUri(Uri uri) async {
+  Future<void> _refreshStatuses() async {
     setState(() => _isLoading = true);
-    final statuses = await WhatsAppService.instance.getStatusesFromUri(uri);
-    
-    setState(() {
-      _images = statuses.where((s) => !s.isVideo).toList();
-      _videos = statuses.where((s) => s.isVideo).toList();
-      _isLoading = false;
-    });
+    try {
+      final statuses = await WhatsAppService.instance.getStatuses();
+      setState(() {
+        _images = statuses.where((s) => !s.isVideo).toList();
+        _videos = statuses.where((s) => s.isVideo).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
   }
 
   void _showStatusPreview(WhatsAppStatus status) {
@@ -117,10 +94,17 @@ class _WhatsAppStatusScreenState extends State<WhatsAppStatusScreen> with Single
           labelColor: AppColors.accent,
           tabs: const [Tab(text: 'IMAGES'), Tab(text: 'VIDEOS')],
         ),
+        actions: [
+          if (_hasPermission)
+            IconButton(
+              icon: const Icon(Icons.refresh_rounded, color: AppColors.accent),
+              onPressed: _refreshStatuses,
+            ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
-          : _grantedUri == null
+          : !_hasPermission
               ? _buildGrantAccessUI()
               : TabBarView(
                   controller: _tabController,
@@ -150,7 +134,7 @@ class _WhatsAppStatusScreenState extends State<WhatsAppStatusScreen> with Single
             ),
             const SizedBox(height: 32),
             OutlinedButton(
-              onPressed: _requestFolderAccess,
+              onPressed: _initServiceAndLoad,
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.accent,
                 side: const BorderSide(color: AppColors.accent),
@@ -182,7 +166,7 @@ class _WhatsAppStatusScreenState extends State<WhatsAppStatusScreen> with Single
               fit: StackFit.expand,
               children: [
                 if (!status.isVideo)
-                  Image.network(status.path, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.image))
+                  Image.file(File(status.path), fit: BoxFit.cover)
                 else
                   const Center(child: Icon(Icons.play_circle_outline_rounded, size: 40, color: AppColors.accent)),
                 Positioned(
@@ -221,24 +205,18 @@ class _StatusPreviewDialogState extends State<_StatusPreviewDialog> {
   Future<void> _saveMedia() async {
     setState(() => _isSaving = true);
     try {
-      final uri = Uri.parse(widget.status.uri!);
-      final content = await saf.getDocumentContent(uri);
-      if (content == null) throw 'Gagal membaca file';
-
-      final tempDir = await getTemporaryDirectory();
-      final ext = widget.status.isVideo ? 'mp4' : 'jpg';
-      final tempFile = File('${tempDir.path}/temp_wa_status.$ext');
-      await tempFile.writeAsBytes(content);
-
       if (widget.status.isVideo) {
-        await Gal.putVideo(tempFile.path);
+        await Gal.putVideo(widget.status.path);
       } else {
-        await Gal.putImage(tempFile.path);
+        await Gal.putImage(widget.status.path);
       }
 
-      await NotificationService().showDownloadNotification('wa_status_$ext');
+      await NotificationService().showDownloadNotification('wa_status_${widget.status.isVideo ? 'video' : 'image'}');
       
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved to Gallery!')));
+        Navigator.pop(context);
+      }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
@@ -257,7 +235,7 @@ class _StatusPreviewDialogState extends State<_StatusPreviewDialog> {
             padding: const EdgeInsets.all(16.0),
             child: widget.status.isVideo 
               ? const Icon(Icons.video_library, size: 100, color: AppColors.accent)
-              : Image.network(widget.status.path, height: 300, fit: BoxFit.contain),
+              : Image.file(File(widget.status.path), height: 300, fit: BoxFit.contain),
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
