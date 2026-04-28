@@ -30,7 +30,7 @@ class _WhatsAppStatusScreenState extends State<WhatsAppStatusScreen> with Single
   Future<void> _initServiceAndLoad() async {
     setState(() => _isLoading = true);
     // Primary path for WhatsApp
-    await WhatsAppService.instance.init(WhatsAppService.waPath);
+    await WhatsAppService.instance.init();
     await WhatsAppService.instance.requestNotificationPermission();
     
     final bool? isGranted = await WhatsAppService.instance.getFolderPermission();

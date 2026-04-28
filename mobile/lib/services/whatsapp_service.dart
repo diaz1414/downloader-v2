@@ -23,7 +23,7 @@ class WhatsAppService {
 
   Uri? _grantedUri;
 
-  Future<void> init(String path) async {
+  Future<void> init() async {
     // Check if we already have permission for the WA directory
     final permissions = await saf.persistedUriPermissions();
     for (var perm in permissions ?? []) {
@@ -77,7 +77,7 @@ class WhatsAppService {
       final List<WhatsAppStatus> statuses = [];
 
       // List all files in .Statuses
-      await for (final file in saf.listFiles(statusesDir.uri)) {
+      await for (final file in saf.listFiles(statusesDir.uri, columns: [saf.DocumentFileColumn.displayName])) {
         final name = file.name ?? '';
         if (name.endsWith('.nomedia')) continue;
 
