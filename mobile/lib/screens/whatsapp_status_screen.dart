@@ -120,33 +120,67 @@ class _WhatsAppStatusScreenState extends State<WhatsAppStatusScreen> with Single
   }
 
   Widget _buildGrantAccessUI() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.folder_shared_rounded, size: 64, color: AppColors.border),
-            const SizedBox(height: 24),
-            Text('AKSES DIBLOKIR SISTEM', style: AppTextStyles.mono(size: 14, weight: FontWeight.w700)),
-            const SizedBox(height: 12),
-            Text(
-              'Android 11+ memerlukan izin manual untuk membaca folder WhatsApp Status demi keamanan Anda.',
-              style: AppTextStyles.mono(size: 10, opacity: 0.5),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            OutlinedButton(
-              onPressed: _initServiceAndLoad,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.accent,
-                side: const BorderSide(color: AppColors.accent),
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+    return SingleChildScrollView(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.privacy_tip_outlined, size: 64, color: AppColors.accent),
+              const SizedBox(height: 24),
+              Text('PANDUAN AKSES FOLDER', style: AppTextStyles.mono(size: 16, weight: FontWeight.w700, color: AppColors.accent)),
+              const SizedBox(height: 16),
+              Text(
+                'Mulai Android 11, sistem membatasi akses aplikasi ke folder WhatsApp. Ikuti 3 langkah mudah ini:',
+                style: AppTextStyles.mono(size: 10, opacity: 0.7),
+                textAlign: TextAlign.center,
               ),
-              child: Text('BERIKAN AKSES FOLDER', style: AppTextStyles.mono(size: 10, weight: FontWeight.bold)),
-            ),
-          ],
+              const SizedBox(height: 32),
+              _buildTutorialStep('1', 'Tonton Status di WhatsApp', 'Anda harus melihat status di aplikasi WhatsApp asli terlebih dahulu agar tersimpan di HP Anda.'),
+              _buildTutorialStep('2', 'Tekan Tombol Akses', 'Tekan tombol "Berikan Akses" di bawah, lalu Anda akan diarahkan ke file manager sistem.'),
+              _buildTutorialStep('3', 'Gunakan Folder Ini', 'Langsung cari dan tekan tombol biru "Gunakan Folder Ini" (Use this folder) di bagian bawah layar. Lalu pilih "Izinkan" (Allow).'),
+              const SizedBox(height: 32),
+              OutlinedButton(
+                onPressed: _initServiceAndLoad,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.background,
+                  backgroundColor: AppColors.accent,
+                  side: const BorderSide(color: AppColors.accent),
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                ),
+                child: Text('BERIKAN AKSES FOLDER', style: AppTextStyles.mono(size: 12, weight: FontWeight.bold)),
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTutorialStep(String number, String title, String desc) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 24, height: 24,
+            decoration: BoxDecoration(color: AppColors.accent.withOpacity(0.2), shape: BoxShape.circle),
+            child: Center(child: Text(number, style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 12))),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: AppTextStyles.mono(size: 12, weight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                Text(desc, style: AppTextStyles.mono(size: 10, opacity: 0.6)),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
