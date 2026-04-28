@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 import '../models/download_result.dart';
 import '../widgets/search_bar_widget.dart';
 import '../screens/result_bottom_sheet.dart';
+import '../screens/whatsapp_status_screen.dart';
 
 /// HomeScreen — mirrors page.tsx + Hero.tsx + Navbar from website
 class HomeScreen extends StatefulWidget {
@@ -292,6 +293,33 @@ class _HeroSection extends StatelessWidget {
               .fadeIn(duration: 800.ms, delay: 600.ms)
               .scale(begin: const Offset(0.97, 0.97), duration: 800.ms),
 
+          const SizedBox(height: 24),
+
+          // WhatsApp Status Button
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const WhatsAppStatusScreen()),
+                );
+              },
+              icon: const Icon(SimpleIcons.whatsapp, size: 16, color: Color(0xFF25D366)),
+              label: Text(
+                'WHATSAPP STATUS SAVER',
+                style: AppTextStyles.mono(size: 10, weight: FontWeight.w700, letterSpacing: 1),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.foreground,
+                side: const BorderSide(color: AppColors.border),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                backgroundColor: AppColors.cardSurface,
+              ),
+            ),
+          ).animate().fadeIn(duration: 800.ms, delay: 700.ms),
+
           const SizedBox(height: 40),
 
           // Scroll indicator
@@ -324,6 +352,9 @@ class _FeatureGridSection extends StatelessWidget {
     _PlatformData('Twitter/X', SimpleIcons.x, Colors.white),
     _PlatformData('Pinterest', SimpleIcons.pinterest, Color(0xFFBD081C)),
     _PlatformData('SoundCloud', SimpleIcons.soundcloud, Color(0xFFFF3300)),
+    _PlatformData('Snapchat', SimpleIcons.snapchat, Color(0xFFFFFC00)),
+    _PlatformData('Telegram', SimpleIcons.telegram, Color(0xFF2CA5E0)),
+    _PlatformData('Facebook', SimpleIcons.facebook, Color(0xFF1877F2)),
   ];
 
   @override
@@ -354,7 +385,7 @@ class _FeatureGridSection extends StatelessWidget {
                 ),
               ),
               Text(
-                'Total: 06\n// Active',
+                'Total: 09\n// Active',
                 style: AppTextStyles.mono(size: 8, opacity: 0.3),
                 textAlign: TextAlign.right,
               ),

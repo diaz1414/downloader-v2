@@ -6,6 +6,9 @@ enum DetectedPlatform {
   twitter,
   pinterest,
   soundcloud,
+  snapchat,
+  telegram,
+  facebook,
   unknown,
 }
 
@@ -24,6 +27,12 @@ extension DetectedPlatformLabel on DetectedPlatform {
         return 'Pinterest';
       case DetectedPlatform.soundcloud:
         return 'SoundCloud';
+      case DetectedPlatform.snapchat:
+        return 'Snapchat';
+      case DetectedPlatform.telegram:
+        return 'Telegram';
+      case DetectedPlatform.facebook:
+        return 'Facebook';
       case DetectedPlatform.unknown:
         return 'Unknown';
     }
@@ -44,6 +53,12 @@ extension DetectedPlatformLabel on DetectedPlatform {
         return 0xFFBD081C;
       case DetectedPlatform.soundcloud:
         return 0xFFFF3300;
+      case DetectedPlatform.snapchat:
+        return 0xFFFFFC00; // Snapchat yellow
+      case DetectedPlatform.telegram:
+        return 0xFF2CA5E0; // Telegram blue
+      case DetectedPlatform.facebook:
+        return 0xFF1877F2; // Facebook blue
       case DetectedPlatform.unknown:
         return 0xFFD4AF37;
     }
@@ -72,6 +87,15 @@ class PlatformDetector {
     }
     if (lower.contains('soundcloud.com')) {
       return DetectedPlatform.soundcloud;
+    }
+    if (lower.contains('snapchat.com')) {
+      return DetectedPlatform.snapchat;
+    }
+    if (lower.contains('t.me') || lower.contains('telegram.me')) {
+      return DetectedPlatform.telegram;
+    }
+    if (lower.contains('facebook.com') || lower.contains('fb.watch')) {
+      return DetectedPlatform.facebook;
     }
     return DetectedPlatform.unknown;
   }
