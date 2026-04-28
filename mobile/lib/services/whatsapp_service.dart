@@ -48,8 +48,8 @@ class WhatsAppService {
     }
 
     final uri = Uri.parse(waTreeUri);
-    // Request permission, grantWritePermission: true is usually default for openDocumentTree to make it persistable
-    final grantedUri = await saf.openDocumentTree(initialUri: uri, grantWritePermission: true);
+    // Remove grantWritePermission: true because Android 11+ restricts write access to Android/media
+    final grantedUri = await saf.openDocumentTree(initialUri: uri);
     if (grantedUri != null) {
       _grantedUri = grantedUri;
       return true;
