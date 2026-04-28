@@ -28,6 +28,9 @@ subprojects {
                     setNamespaceMethod.invoke(androidExt, groupStr)
                 }
             } catch (e: Exception) {
+                // Ignore if methods don't exist
+            }
+        }
     }
 }
 
