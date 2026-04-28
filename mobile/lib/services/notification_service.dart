@@ -14,7 +14,7 @@ class NotificationService {
     tz.initializeTimeZones();
     
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('ic_download');
 
     const InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
@@ -32,7 +32,7 @@ class NotificationService {
       importance: Importance.max,
       priority: Priority.high,
       showWhen: true,
-      icon: '@mipmap/ic_launcher',
+      icon: 'ic_download',
     );
 
     const NotificationDetails platformDetails = NotificationDetails(
