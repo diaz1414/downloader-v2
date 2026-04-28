@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/download_result.dart';
 import '../theme/app_theme.dart';
+import '../services/notification_service.dart';
 
 class DownloadCardWidget extends StatefulWidget {
   final PickerItem item;
@@ -114,6 +115,10 @@ class _DownloadCardWidgetState extends State<DownloadCardWidget> {
         });
         
         final fileName = "diaw_$timestamp.${widget.item.extension}";
+        
+        // Show System Notification
+        await NotificationService().showDownloadNotification(fileName);
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: AppColors.success,

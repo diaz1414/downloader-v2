@@ -22,6 +22,11 @@ dependencies:
   # File & Permissions
   permission_handler: ^11.3.1
   gal: ^2.3.2
+  shared_storage: ^0.8.1
+  
+  # Notifications
+  flutter_local_notifications: ^21.0.0
+  timezone: ^0.11.0
   
   # Animations
   flutter_animate: ^4.5.0
@@ -33,6 +38,7 @@ dependencies:
   connectivity_plus: ^6.0.5
   share_plus: ^13.1.0
   path_provider: ^2.1.5
+  flutter_local_notifications: ^21.0.0
   
   # Image caching for thumbnails — using built-in Image.network instead
 

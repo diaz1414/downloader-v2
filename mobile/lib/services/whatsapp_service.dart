@@ -1,96 +1,81 @@
 import 'dart:io';
+import 'package:shared_storage/shared_storage.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class WhatsAppStatus {
   final String path;
   final bool isVideo;
+  final String? uri; // For SAF
 
-  WhatsAppStatus({required this.path, required this.isVideo});
+  WhatsAppStatus({required this.path, required this.isVideo, this.uri});
 }
 
 class WhatsAppService {
   WhatsAppService._();
   static final WhatsAppService instance = WhatsAppService._();
 
-  final List<String> _paths = [
-    '/storage/emulated/0/WhatsApp/Media/.Statuses',
-    '/storage/emulated/0/Android/media/com.whatsapp/WhatsApp/Media/.Statuses',
-    '/storage/emulated/0/Android/media/com.whatsapp.w4b/WhatsApp Business/Media/.Statuses',
-    '/storage/emulated/0/WhatsApp Business/Media/.Statuses',
-    '/storage/emulated/0/GBWhatsApp/Media/.Statuses',
-    '/storage/emulated/0/Android/media/com.gbwhatsapp/GBWhatsApp/Media/.Statuses',
-  ];
+  // Root URIs for SAF
+  final Map<String, String> _waPaths = {
+    'WhatsApp': 'Android/media/com.whatsapp/WhatsApp/Media/.Statuses',
+    'WhatsApp Business': 'Android/media/com.whatsapp.w4b/WhatsApp Business/Media/.Statuses',
+    'GBWhatsApp': 'Android/media/com.gbwhatsapp/GBWhatsApp/Media/.Statuses',
+    'WhatsApp (Legacy)': 'WhatsApp/Media/.Statuses',
+  };
 
-  Future<bool> requestPermission() async {
-    // Android 11+ All Files Access
-    var manageStatus = await Permission.manageExternalStorage.status;
-    if (!manageStatus.isGranted) {
-      manageStatus = await Permission.manageExternalStorage.request();
-    }
-    if (manageStatus.isGranted) return true;
-
-    // Android 10 and below Fallback
-    var storageStatus = await Permission.storage.status;
-    if (!storageStatus.isGranted) {
-      storageStatus = await Permission.storage.request();
-    }
-    return storageStatus.isGranted;
+  Future<bool> requestNotificationPermission() async {
+    final status = await Permission.notification.request();
+    return status.isGranted;
   }
 
-  Future<List<WhatsAppStatus>> getStatuses() async {
-    final hasPermission = await requestPermission();
-    if (!hasPermission) return [];
-
-    List<WhatsAppStatus> statuses = [];
-    Set<String> uniquePaths = {};
-
-    for (String folderPath in _paths) {
-      final dir = Directory(folderPath);
-      if (await dir.exists()) {
-        try {
-          final items = dir.listSync();
-          for (var item in items) {
-            if (item is File) {
-              final path = item.path;
-              if (uniquePaths.contains(path)) continue;
-              
-              // Filter out .nomedia files
-              if (path.endsWith('.nomedia')) continue;
-              
-              // Accept common image/video extensions
-              if (path.endsWith('.jpg') || 
-                  path.endsWith('.jpeg') || 
-                  path.endsWith('.png') ||
-                  path.endsWith('.mp4') ||
-                  path.endsWith('.gif')) {
-                
-                uniquePaths.add(path);
-                statuses.add(WhatsAppStatus(
-                  path: path,
-                  isVideo: path.endsWith('.mp4') || path.endsWith('.gif'),
-                ));
-              }
-            }
-          }
-        } catch (e) {
-          print('Error reading folder $folderPath: $e');
+  /// Check if we already have SAF permission for a specific folder
+  Future<Uri?> getPersistedUri(String folderName) async {
+    final persistedUris = await persistedUriPermissions();
+    if (persistedUris == null) return null;
+    
+    for (final permission in persistedUris) {
+      if (permission.isReadPermission) {
+        // Simple check: if the URI contains the folder name
+        if (permission.uri.toString().contains(folderName.replaceAll(' ', '%20'))) {
+          return permission.uri;
         }
       }
     }
+    return null;
+  }
 
-    // Sort by modified time (newest first)
-    statuses.sort((a, b) {
-      final fileA = File(a.path);
-      final fileB = File(b.path);
-      try {
-        final modA = fileA.lastModifiedSync();
-        final modB = fileB.lastModifiedSync();
-        return modB.compareTo(modA);
-      } catch (_) {
-        return 0;
+  /// Request SAF permission for a folder
+  Future<Uri?> requestFolderPermission(String folderPath) async {
+    // This will open the system file picker
+    final uri = await openDocumentTree(initialUri: Uri.parse('content://com.android.externalstorage.documents/tree/primary%3A${folderPath.replaceAll('/', '%2F')}'));
+    return uri;
+  }
+
+  Future<List<WhatsAppStatus>> getStatusesFromUri(Uri rootUri) async {
+    List<WhatsAppStatus> statuses = [];
+    
+    final files = await listFiles(rootUri, columns: [DocumentFileColumn.displayName, DocumentFileColumn.size, DocumentFileColumn.lastModified, DocumentFileColumn.mimeType, DocumentFileColumn.id]);
+    
+    if (files == null) return [];
+
+    for (final file in files) {
+      final name = file.name ?? '';
+      final mimeType = file.mimeType ?? '';
+      
+      if (name.endsWith('.nomedia')) continue;
+      
+      bool isVideo = mimeType.startsWith('video/') || name.endsWith('.mp4');
+      bool isImage = mimeType.startsWith('image/') || name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.png');
+      
+      if (isVideo || isImage) {
+        statuses.add(WhatsAppStatus(
+          path: file.uri.toString(), // We use URI as path for SAF
+          isVideo: isVideo,
+          uri: file.uri.toString(),
+        ));
       }
-    });
-
+    }
+    
+    // Note: sorting SAF files might be needed if not sorted by system
     return statuses;
   }
 }
