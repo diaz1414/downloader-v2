@@ -87,8 +87,8 @@ class WhatsAppService {
         bool isVideo = name.endsWith('.mp4');
         bool isImage = name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.png');
 
-        if (isImage) {
-          // Cache images locally since they are small and Image.file needs real path
+        if (isVideo || isImage) {
+          // Cache the file locally to show it in UI since Image.file and video_thumbnail require real path
           final bytes = await saf.getDocumentContent(file.uri);
           if (bytes != null) {
             final localFile = File('${cacheDir.path}/$name');
@@ -97,16 +97,9 @@ class WhatsAppService {
             }
             statuses.add(WhatsAppStatus(
               path: localFile.path,
-              isVideo: false,
+              isVideo: isVideo,
             ));
           }
-        } else if (isVideo) {
-          // Do not eagerly cache videos to avoid OutOfMemory errors and slow loading
-          // Pass the content URI instead
-          statuses.add(WhatsAppStatus(
-            path: file.uri.toString(),
-            isVideo: true,
-          ));
         }
       }
 

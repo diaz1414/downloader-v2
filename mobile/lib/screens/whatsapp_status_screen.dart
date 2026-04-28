@@ -244,23 +244,10 @@ class _StatusPreviewDialogState extends State<_StatusPreviewDialog> {
   Future<void> _saveMedia() async {
     setState(() => _isSaving = true);
     try {
-      String savePath = widget.status.path;
-      if (widget.status.isVideo && savePath.startsWith('content://')) {
-        final bytes = await saf.getDocumentContent(Uri.parse(savePath));
-        if (bytes != null) {
-          final tempDir = await getTemporaryDirectory();
-          final tempFile = File('${tempDir.path}/temp_video_${DateTime.now().millisecondsSinceEpoch}.mp4');
-          await tempFile.writeAsBytes(bytes);
-          savePath = tempFile.path;
-        } else {
-          throw Exception('Gagal membaca file video dari sistem');
-        }
-      }
-
       if (widget.status.isVideo) {
-        await Gal.putVideo(savePath);
+        await Gal.putVideo(widget.status.path);
       } else {
-        await Gal.putImage(savePath);
+        await Gal.putImage(widget.status.path);
       }
 
       await NotificationService().showDownloadNotification('wa_status_${widget.status.isVideo ? 'video' : 'image'}');
