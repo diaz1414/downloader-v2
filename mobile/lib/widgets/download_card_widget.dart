@@ -112,6 +112,17 @@ class _DownloadCardWidgetState extends State<DownloadCardWidget> {
           _isSuccess = true;
           _progress = 1.0;
         });
+        
+        final fileName = "diaw_$timestamp.${widget.item.extension}";
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.success,
+            content: Text(
+              'DOWNLOAD COMPLETE: $fileName', 
+              style: AppTextStyles.mono(size: 10, color: AppColors.background, weight: FontWeight.w700),
+            ),
+          ),
+        );
       }
       
       final file = File(tempPath);

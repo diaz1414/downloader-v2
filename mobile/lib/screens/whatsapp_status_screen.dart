@@ -260,11 +260,12 @@ class _StatusPreviewDialogState extends State<_StatusPreviewDialog> {
       }
       
       if (mounted) {
+        final fileName = widget.status.path.split('/').last;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: AppColors.success,
             content: Text(
-              'SAVED TO GALLERY',
+              'SAVED TO GALLERY: $fileName',
               style: AppTextStyles.mono(size: 10, color: AppColors.background, weight: FontWeight.w700),
             ),
           ),

@@ -17,24 +17,24 @@ class WhatsAppService {
     '/storage/emulated/0/Android/media/com.whatsapp/WhatsApp/Media/.Statuses',
     '/storage/emulated/0/Android/media/com.whatsapp.w4b/WhatsApp Business/Media/.Statuses',
     '/storage/emulated/0/WhatsApp Business/Media/.Statuses',
+    '/storage/emulated/0/GBWhatsApp/Media/.Statuses',
+    '/storage/emulated/0/Android/media/com.gbwhatsapp/GBWhatsApp/Media/.Statuses',
   ];
 
   Future<bool> requestPermission() async {
-    // For Android 11+
-    if (await Permission.manageExternalStorage.isGranted) {
-      return true;
+    // Android 11+ All Files Access
+    var manageStatus = await Permission.manageExternalStorage.status;
+    if (!manageStatus.isGranted) {
+      manageStatus = await Permission.manageExternalStorage.request();
     }
-    
-    // For Android 10 and below
-    if (await Permission.storage.isGranted) {
-      return true;
+    if (manageStatus.isGranted) return true;
+
+    // Android 10 and below Fallback
+    var storageStatus = await Permission.storage.status;
+    if (!storageStatus.isGranted) {
+      storageStatus = await Permission.storage.request();
     }
-
-    final statusStorage = await Permission.storage.request();
-    if (statusStorage.isGranted) return true;
-
-    final statusManage = await Permission.manageExternalStorage.request();
-    return statusManage.isGranted;
+    return storageStatus.isGranted;
   }
 
   Future<List<WhatsAppStatus>> getStatuses() async {
