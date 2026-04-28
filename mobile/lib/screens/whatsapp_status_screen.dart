@@ -207,7 +207,7 @@ class _WhatsAppStatusScreenState extends State<WhatsAppStatusScreen> with Single
                 if (!status.isVideo)
                   Image.file(File(status.path), fit: BoxFit.cover)
                 else
-                  _VideoThumbnailWidget(videoPath: status.path),
+                  const Center(child: Icon(Icons.play_circle_outline_rounded, size: 40, color: AppColors.accent)),
                 Positioned(
                   bottom: 0, left: 0, right: 0,
                   child: Container(
