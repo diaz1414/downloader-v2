@@ -40,13 +40,16 @@ class WhatsAppService {
   }
 
   Future<bool?> getFolderPermission() async {
+    if (_grantedUri != null) return true;
+
     if (Platform.isAndroid && await Permission.storage.request().isGranted) {
       final androidInfo = Platform.operatingSystemVersion;
       // For older Android versions, we might not need SAF, but let's try SAF if needed
     }
 
     final uri = Uri.parse(waTreeUri);
-    final grantedUri = await saf.openDocumentTree(initialUri: uri);
+    // Request permission, grantWritePermission: true is usually default for openDocumentTree to make it persistable
+    final grantedUri = await saf.openDocumentTree(initialUri: uri, grantWritePermission: true);
     if (grantedUri != null) {
       _grantedUri = grantedUri;
       return true;
