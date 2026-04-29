@@ -57,6 +57,76 @@ class WhatsAppService {
     return false;
   }
 
+  Stream<List<WhatsAppStatus>> getStatusesStream() async* {
+    if (_grantedUri == null) {
+      // For Android 10 and below, try direct access as fallback
+      final legacyDir = Directory(waLegacyPath);
+      if (legacyDir.existsSync()) {
+        yield _getStatusesFromDir(legacyDir);
+      }
+      return;
+    }
+
+    try {
+      // Find Media folder
+      final mediaDir = await saf.findFile(_grantedUri!, 'Media');
+      if (mediaDir == null) return;
+
+      // Find .Statuses folder
+      final statusesDir = await saf.findFile(mediaDir.uri, '.Statuses');
+      if (statusesDir == null) return;
+
+      final cacheDir = await getTemporaryDirectory();
+      final List<WhatsAppStatus> statuses = [];
+
+      // Yield an initial empty list so the UI can clear old ones
+      yield [];
+
+      // List all files in .Statuses
+      await for (final file in saf.listFiles(statusesDir.uri, columns: [saf.DocumentFileColumn.displayName])) {
+        final name = file.name ?? '';
+        if (name.endsWith('.nomedia')) continue;
+
+        bool isVideo = name.endsWith('.mp4');
+        bool isImage = name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.png');
+
+        if (isVideo || isImage) {
+          final localFile = File('${cacheDir.path}/$name');
+          bool shouldAdd = false;
+          
+          if (!localFile.existsSync() || localFile.lengthSync() == 0) {
+            try {
+              final bytes = await saf.getDocumentContent(file.uri);
+              if (bytes != null && bytes.isNotEmpty) {
+                await localFile.writeAsBytes(bytes);
+                shouldAdd = true;
+              }
+            } catch (e) {
+              print('Error caching file $name: $e');
+            }
+          } else {
+            shouldAdd = true;
+          }
+
+          if (shouldAdd && localFile.existsSync() && localFile.lengthSync() > 0) {
+            statuses.add(WhatsAppStatus(
+              path: localFile.path,
+              isVideo: isVideo,
+            ));
+            
+            // Yield progressive updates so the user doesn't wait forever
+            final sortedList = List<WhatsAppStatus>.from(statuses)
+              ..sort((a, b) => File(b.path).lastModifiedSync().compareTo(File(a.path).lastModifiedSync()));
+            yield sortedList;
+          }
+        }
+      }
+    } catch (e) {
+      print('Error getting statuses stream: $e');
+      yield [];
+    }
+  }
+
   Future<List<WhatsAppStatus>> getStatuses() async {
     if (_grantedUri == null) {
       // For Android 10 and below, try direct access as fallback
@@ -89,12 +159,20 @@ class WhatsAppService {
 
         if (isVideo || isImage) {
           // Cache the file locally to show it in UI since Image.file and video_thumbnail require real path
-          final bytes = await saf.getDocumentContent(file.uri);
-          if (bytes != null) {
-            final localFile = File('${cacheDir.path}/$name');
-            if (!localFile.existsSync()) {
-              await localFile.writeAsBytes(bytes);
+          final localFile = File('${cacheDir.path}/$name');
+          
+          if (!localFile.existsSync() || localFile.lengthSync() == 0) {
+            try {
+              final bytes = await saf.getDocumentContent(file.uri);
+              if (bytes != null && bytes.isNotEmpty) {
+                await localFile.writeAsBytes(bytes);
+              }
+            } catch (e) {
+              print('Error caching file $name: $e');
             }
+          }
+
+          if (localFile.existsSync() && localFile.lengthSync() > 0) {
             statuses.add(WhatsAppStatus(
               path: localFile.path,
               isVideo: isVideo,

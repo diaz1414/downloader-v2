@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -24,6 +25,14 @@ class _WhatsAppStatusScreenState extends State<WhatsAppStatusScreen> with Single
   List<WhatsAppStatus> _videos = [];
   bool _isLoading = true;
   bool _hasPermission = false;
+  StreamSubscription? _statusSubscription;
+
+  @override
+  void dispose() {
+    _statusSubscription?.cancel();
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -54,18 +63,32 @@ class _WhatsAppStatusScreenState extends State<WhatsAppStatusScreen> with Single
   }
 
   Future<void> _refreshStatuses() async {
-    setState(() => _isLoading = true);
-    try {
-      final statuses = await WhatsAppService.instance.getStatuses();
-      setState(() {
-        _images = statuses.where((s) => !s.isVideo).toList();
-        _videos = statuses.where((s) => s.isVideo).toList();
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-    }
+    setState(() {
+      _isLoading = true;
+      _images.clear();
+      _videos.clear();
+    });
+    
+    _statusSubscription?.cancel();
+    _statusSubscription = WhatsAppService.instance.getStatusesStream().listen(
+      (statuses) {
+        if (!mounted) return;
+        setState(() {
+          _images = statuses.where((s) => !s.isVideo).toList();
+          _videos = statuses.where((s) => s.isVideo).toList();
+          _isLoading = false;
+        });
+      },
+      onError: (e) {
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      },
+      onDone: () {
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+      },
+    );
   }
 
   void _showStatusPreview(WhatsAppStatus status) {
